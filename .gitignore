@@ -1,0 +1,17 @@
+# Environment and generated data
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+data/raw/
+data/processed/
+data/acquisition/
+data/private/
+runs/
+models/assets/*.task
+models/assets/*.obj
+models/checkpoints/
+*.part
+*.partial
+.env

@@ -1,0 +1,9 @@
+{
+  "filename": "canonical_face_model.obj",
+  "source_url": "https://raw.githubusercontent.com/google-ai-edge/mediapipe/master/mediapipe/modules/face_geometry/data/canonical_face_model.obj",
+  "sha256": "8bac80443397e113f41a8b565ea72c59390bc031d9defab289dba7bc0c54e618",
+  "size_bytes": 45999,
+  "checked_at_utc": "2026-10-06T04:52:35.579094+00:00",
+  "license_reference": "https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE",
+  "note": "Source/hash recorded; dataset rights are separate from model repository license."
+}

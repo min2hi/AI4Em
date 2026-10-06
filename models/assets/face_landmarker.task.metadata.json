@@ -1,0 +1,9 @@
+{
+  "filename": "face_landmarker.task",
+  "source_url": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+  "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+  "size_bytes": 3758596,
+  "checked_at_utc": "2026-10-06T04:52:34.668670+00:00",
+  "license_reference": "https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE",
+  "note": "Source/hash recorded; dataset rights are separate from model repository license."
+}

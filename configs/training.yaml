@@ -1,0 +1,38 @@
+schema_version: facial_features_v1
+calibration_mode: P1
+sequence_fps: 10
+sequence_window_s: 10
+stride_s: 1
+max_missing_ratio: 0.20
+max_gap_s: 1
+seed: 42
+device: cpu
+batch_size: 64
+max_epochs: 50
+learning_rate: 0.001
+weight_decay: 0.0001
+early_stopping_patience: 8
+gradient_clip_norm: 1.0
+hidden_size: 64
+num_layers: 1
+head_dropout: 0.3
+rf_n_estimators: 300
+rf_max_depth: 12
+rf_min_samples_leaf: 5
+feature_names:
+  - ear_left_norm
+  - ear_right_norm
+  - mar_delta
+  - pitch_delta
+  - yaw_delta
+  - roll_delta
+  - perclos_60
+  - closure_elapsed_s
+  - yawn_elapsed_s
+  - pitch_velocity_dps
+  - left_eye_valid
+  - right_eye_valid
+  - mouth_valid
+  - pose_valid
+  - perclos_ready
+  - calibration_valid
