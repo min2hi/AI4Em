@@ -3,7 +3,8 @@
 ## 2026-10-07 — Người 2 Phase21 replay/parity core
 
 - Thêm chronological `replay_session`: dùng timestamp nguồn làm current time, giữ mọi scheduled record kể cả NO_FACE/unavailable và từ chối nối source/timestamp/frame order sai.
-- Thêm `compare_replays` với tolerance khai báo trước; so identity/status/class/raw+smooth probability và ghi rõ missing/unexpected timestamp thay vì loại khỏi report.
+- Mỗi replay record giữ tám giá trị `FeatureSample` (giá trị không hữu hạn thành null) và năm validity mask; trace phải khớp source/frame/timestamp của packet hiện tại.
+- Thêm `compare_replays` với tolerance khai báo trước; so feature/validity, identity/status/class/raw+smooth probability và ghi rõ missing/unexpected timestamp thay vì loại khỏi report.
 - Detector nhận optional `current_time_ms` chỉ cho replay, live mặc định vẫn dùng perf_counter clock. Native parity với Phase9/10/13 bundle thật còn là integration acceptance chưa thể chạy trong snapshot hiện tại.
 
 ## 2026-10-07 — Người 2 Phase18 prediction smoothing core

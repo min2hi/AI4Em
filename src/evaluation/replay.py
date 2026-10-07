@@ -1,16 +1,37 @@
 """Chronological source-time replay and parity comparison."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
-from typing import Iterable, Protocol, Sequence
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 
-from src.contracts import DetectionResult, FramePacket, Prediction
+from src.contracts import DetectionResult, FeatureSample, FramePacket, Prediction
+
+FEATURE_VALUE_FIELDS = (
+    "ear_left",
+    "ear_right",
+    "ear_mean",
+    "mar",
+    "pitch",
+    "yaw",
+    "roll",
+    "reprojection_error_norm",
+)
+FEATURE_VALIDITY_FIELDS = (
+    "face_detected",
+    "left_eye_valid",
+    "right_eye_valid",
+    "mouth_valid",
+    "pose_valid",
+)
 
 
 class ReplayDetector(Protocol):
+    @property
+    def last_feature_sample(self) -> FeatureSample | None: ...
     def reset_session(self) -> None: ...
     def process(self, packet: FramePacket, *, current_time_ms: int | None = None) -> DetectionResult: ...
 
@@ -22,6 +43,8 @@ class ReplayRecord:
     timestamp_ms: int
     system_status: str
     calibration_status: str
+    feature_values: tuple[float | None, ...] | None
+    feature_validity: tuple[bool, ...] | None
     raw_timestamp_ms: int | None
     raw_model_id: str | None
     raw_probabilities: tuple[float, float, float] | None
@@ -30,6 +53,29 @@ class ReplayRecord:
     smoothed_model_id: str | None
     smoothed_probabilities: tuple[float, float, float] | None
     smoothed_class_id: int | None
+
+
+def _feature_trace(
+    sample: FeatureSample | None,
+    *,
+    packet: FramePacket,
+) -> tuple[tuple[float | None, ...] | None, tuple[bool, ...] | None]:
+    if sample is None:
+        return None, None
+    if not isinstance(sample, FeatureSample):
+        raise TypeError("detector.last_feature_sample must be FeatureSample or None")
+    if (
+        sample.source_id != packet.source_id
+        or sample.frame_index != packet.frame_index
+        or sample.timestamp_ms != packet.timestamp_ms
+    ):
+        raise ValueError("replay feature trace does not match the current packet identity")
+    values = tuple(
+        float(value) if math.isfinite(value) else None
+        for value in (getattr(sample, field) for field in FEATURE_VALUE_FIELDS)
+    )
+    validity = tuple(bool(getattr(sample, field)) for field in FEATURE_VALIDITY_FIELDS)
+    return values, validity
 
 
 def _probabilities(
@@ -72,6 +118,10 @@ def replay_session(
         if previous_frame_index is not None and packet.frame_index <= previous_frame_index:
             raise ValueError("replay frame indices must strictly increase")
         detection = detector.process(packet, current_time_ms=packet.timestamp_ms)
+        feature_values, feature_validity = _feature_trace(
+            detector.last_feature_sample,
+            packet=packet,
+        )
         raw_class = None if detection.raw_prediction is None or detection.raw_prediction.class_id is None else int(detection.raw_prediction.class_id)
         smooth_class = None if detection.smoothed_prediction is None or detection.smoothed_prediction.class_id is None else int(detection.smoothed_prediction.class_id)
         records.append(ReplayRecord(
@@ -80,6 +130,8 @@ def replay_session(
             timestamp_ms=packet.timestamp_ms,
             system_status=detection.system_status.value,
             calibration_status=detection.calibration_status,
+            feature_values=feature_values,
+            feature_validity=feature_validity,
             raw_timestamp_ms=None if detection.raw_prediction is None else detection.raw_prediction.timestamp_ms,
             raw_model_id=None if detection.raw_prediction is None else detection.raw_prediction.model_id,
             raw_probabilities=_probabilities(detection.raw_prediction, packet_timestamp_ms=packet.timestamp_ms),
@@ -116,7 +168,7 @@ def compare_replays(
         left, right = expected[index], actual[index]
         for field in (
             "source_id", "frame_index", "timestamp_ms", "system_status", "calibration_status",
-            "raw_timestamp_ms", "raw_model_id", "raw_class_id",
+            "feature_validity", "raw_timestamp_ms", "raw_model_id", "raw_class_id",
             "smoothed_timestamp_ms", "smoothed_model_id", "smoothed_class_id",
         ):
             if getattr(left, field) != getattr(right, field):
@@ -127,20 +179,32 @@ def compare_replays(
                     "expected": getattr(left, field),
                     "actual": getattr(right, field),
                 })
-        for field in ("raw_probabilities", "smoothed_probabilities"):
+        for field in ("feature_values", "raw_probabilities", "smoothed_probabilities"):
             expected_values = getattr(left, field)
             actual_values = getattr(right, field)
-            if (expected_values is None) != (actual_values is None):
-                mismatches.append({
-                    "index": index,
-                    "timestamp_ms": left.timestamp_ms,
-                    "field": field,
-                    "expected": expected_values,
-                    "actual": actual_values,
-                })
-            elif expected_values is not None and actual_values is not None and not np.allclose(
-                expected_values, actual_values, atol=atol, rtol=0, equal_nan=False
-            ):
+            presence_differs = (expected_values is None) != (actual_values is None)
+            values_differ = (
+                expected_values is not None
+                and actual_values is not None
+                and (
+                    len(expected_values) != len(actual_values)
+                    or any(
+                        (expected_value is None) != (actual_value is None)
+                        or (
+                            expected_value is not None
+                            and actual_value is not None
+                            and not math.isclose(
+                                expected_value,
+                                actual_value,
+                                rel_tol=0,
+                                abs_tol=atol,
+                            )
+                        )
+                        for expected_value, actual_value in zip(expected_values, actual_values, strict=False)
+                    )
+                )
+            )
+            if presence_differs or values_differ:
                 mismatches.append({
                     "index": index,
                     "timestamp_ms": left.timestamp_ms,
