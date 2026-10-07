@@ -4,7 +4,7 @@
 
 - Thêm `PredictionSmoother` mean-N probability vectors (mặc định3), chưa đủ mẫu trả null, gap `>=2s`/reset xóa lịch sử và không majority-vote class.
 - Reject prediction invalid/NaN/sai shape/sai tổng/model-mix; detector giữ raw ngay và chỉ xuất smooth sau ba prediction hợp lệ.
-- Thêm10 smoother regressions và một detector integration regression; classifier metrics vẫn dùng raw, realtime policy mới dùng smooth.
+- Thêm behavioral regressions cho averaging/expiry/invalid/model identity và detector integration; classifier metrics vẫn dùng raw, realtime policy mới dùng smooth.
 
 ## 2026-10-07 — Người 2 Phase17 realtime buffer/detector core
 
