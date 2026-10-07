@@ -11,6 +11,7 @@ from src.contracts import DetectionResult, FramePacket, Prediction
 
 
 class ReplayDetector(Protocol):
+    def reset_session(self) -> None: ...
     def process(self, packet: FramePacket, *, current_time_ms: int | None = None) -> DetectionResult: ...
 
 
@@ -31,17 +32,30 @@ class ReplayRecord:
     smoothed_class_id: int | None
 
 
-def _probabilities(prediction: Prediction | None) -> tuple[float, float, float] | None:
+def _probabilities(
+    prediction: Prediction | None, *, packet_timestamp_ms: int
+) -> tuple[float, float, float] | None:
     if prediction is None:
         return None
+    if prediction.timestamp_ms < 0 or prediction.timestamp_ms > packet_timestamp_ms:
+        raise ValueError("replay received prediction outside causal source time")
     values = np.asarray(prediction.probabilities)
-    if values.shape != (3,) or not np.isfinite(values).all():
+    if values.shape != (3,) or not np.isfinite(values).all() or np.any(values < 0):
         raise ValueError("replay received malformed prediction probabilities")
+    if not math.isclose(float(values.sum()), 1.0, abs_tol=1e-5):
+        raise ValueError("replay prediction probabilities must sum to one")
     return tuple(float(value) for value in values)
 
 
-def replay_session(packets: Iterable[FramePacket], detector: ReplayDetector) -> tuple[ReplayRecord, ...]:
+def replay_session(
+    packets: Iterable[FramePacket],
+    detector: ReplayDetector,
+    *,
+    reset_session: bool = True,
+) -> tuple[ReplayRecord, ...]:
     """Replay every packet against its source timestamp, never wall-clock speed."""
+    if reset_session:
+        detector.reset_session()
     records: list[ReplayRecord] = []
     source_id: str | None = None
     previous_timestamp: int | None = None
@@ -68,11 +82,11 @@ def replay_session(packets: Iterable[FramePacket], detector: ReplayDetector) -> 
             calibration_status=detection.calibration_status,
             raw_timestamp_ms=None if detection.raw_prediction is None else detection.raw_prediction.timestamp_ms,
             raw_model_id=None if detection.raw_prediction is None else detection.raw_prediction.model_id,
-            raw_probabilities=_probabilities(detection.raw_prediction),
+            raw_probabilities=_probabilities(detection.raw_prediction, packet_timestamp_ms=packet.timestamp_ms),
             raw_class_id=raw_class,
             smoothed_timestamp_ms=None if detection.smoothed_prediction is None else detection.smoothed_prediction.timestamp_ms,
             smoothed_model_id=None if detection.smoothed_prediction is None else detection.smoothed_prediction.model_id,
-            smoothed_probabilities=_probabilities(detection.smoothed_prediction),
+            smoothed_probabilities=_probabilities(detection.smoothed_prediction, packet_timestamp_ms=packet.timestamp_ms),
             smoothed_class_id=smooth_class,
         ))
         previous_timestamp = packet.timestamp_ms

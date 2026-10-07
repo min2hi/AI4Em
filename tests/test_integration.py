@@ -10,6 +10,10 @@ from src.evaluation.replay import ReplayRecord, compare_replays, replay_session
 class Detector:
     def __init__(self):
         self.times = []
+        self.resets = 0
+
+    def reset_session(self):
+        self.resets += 1
 
     def process(self, packet, *, current_time_ms=None):
         self.times.append(current_time_ms)
@@ -31,6 +35,7 @@ def packets():
 def test_replay_uses_source_time_and_preserves_unavailable_timestamps():
     detector = Detector()
     records = replay_session(packets(), detector)
+    assert detector.resets == 1
     assert detector.times == [0, 67, 133]
     assert [record.timestamp_ms for record in records] == [0, 67, 133]
     assert records[1].system_status == "NO_FACE"
@@ -47,6 +52,19 @@ def test_replay_rejects_source_join_and_nonmonotonic_input():
     backwards[2] = replace(backwards[2], timestamp_ms=50)
     with pytest.raises(ValueError, match="strictly increase"):
         replay_session(backwards, Detector())
+
+
+@pytest.mark.parametrize("bad_prediction", [
+    Prediction(134, np.array([.2, .3, .5], dtype=np.float32), DriverState.DROWSY, True, "", "model"),
+    Prediction(133, np.array([.2, .2, .2], dtype=np.float32), DriverState.ALERT, True, "", "model"),
+])
+def test_replay_rejects_future_or_malformed_predictions(bad_prediction):
+    class BadDetector(Detector):
+        def process(self, packet, *, current_time_ms=None):
+            return DetectionResult(bad_prediction, None, SystemStatus.READY, {}, "COMPLETE")
+
+    with pytest.raises(ValueError):
+        replay_session([packets()[-1]], BadDetector())
 
 
 def record(timestamp, probabilities=(.2, .3, .5)):
