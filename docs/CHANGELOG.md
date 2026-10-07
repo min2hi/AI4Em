@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-07 — Người 2 Phase16 calibration lifecycle core
+
+- Thêm `CalibrationManager` cho P0/P1 với state `IDLE/COLLECTING/COMPLETE/FAILED`, wall-clock 30s, tối thiểu 20s valid, timeout60s, retry/reset và profile freeze.
+- Phase9 profile estimator được inject thay vì viết lại trong realtime; manager từ chối profile sai mode/schema/asset/resolution và không P1→P0 fallback.
+- Thêm9 behavioral regressions cho completion, timeout, retry, hai baseline mắt khác nhau, profile mismatch, P0 explicit và timestamp strict. Đây là core đã implement; native webcam/profile-estimator integration còn phụ thuộc Phase9/13.
+
 ## 2026-10-07 — Team handoff và GitHub publication policy
 
 - Thêm bốn tài liệu `Team_01`–`Team_04`: evaluation, realtime core, alerts/camera worker và desktop UI/startup; có ownership, prerequisites, tài liệu nguồn và checklist nghiệm thu bằng evidence thật.
