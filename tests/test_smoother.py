@@ -56,3 +56,19 @@ def test_reset_and_model_identity_protect_sessions():
         smoother.update(prediction(1000, [.7, .2, .1], model_id="other"))
     smoother.reset()
     assert smoother.update(prediction(0, [.7, .2, .1], model_id="other")) is None
+
+
+def test_history_owns_probability_bytes_and_rejects_wrong_class():
+    smoother = PredictionSmoother()
+    first = prediction(0, [.7, .2, .1])
+    smoother.update(first)
+    first.probabilities[:] = [0., 0., 1.]
+    smoother.update(prediction(1000, [.7, .2, .1]))
+    result = smoother.update(prediction(1999, [.7, .2, .1]))
+    assert result is not None
+    np.testing.assert_allclose(result.probabilities, [.7, .2, .1], atol=1e-6)
+
+    wrong = Prediction(3000, np.array([.7, .2, .1], dtype=np.float32),
+                       DriverState.DROWSY, True, "", "model")
+    with pytest.raises(ValueError, match="class_id"):
+        PredictionSmoother().update(wrong)

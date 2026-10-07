@@ -37,7 +37,15 @@ class PredictionSmoother:
         if self._model_id is not None and prediction.model_id != self._model_id:
             raise ValueError("cannot smooth predictions from different models")
         self._model_id = prediction.model_id
-        self._predictions.append(prediction)
+        stored = Prediction(
+            timestamp_ms=int(prediction.timestamp_ms),
+            probabilities=np.asarray(prediction.probabilities, dtype=np.float32).copy(),
+            class_id=prediction.class_id,
+            valid=True,
+            reason=prediction.reason,
+            model_id=prediction.model_id,
+        )
+        self._predictions.append(stored)
         if len(self._predictions) < self.samples:
             return None
 
@@ -75,5 +83,8 @@ class PredictionSmoother:
             raise ValueError("probabilities must be finite and nonnegative")
         if not math.isclose(float(probabilities.sum()), 1.0, abs_tol=1e-5):
             raise ValueError("probabilities must sum to one")
+        expected_class = DriverState(int(np.argmax(probabilities)))
+        if prediction.class_id is not expected_class:
+            raise ValueError("class_id must match probability argmax")
         if not isinstance(prediction.model_id, str) or not prediction.model_id:
             raise ValueError("model_id must be a non-empty string")
