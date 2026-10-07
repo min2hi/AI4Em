@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from numbers import Integral
 from time import perf_counter_ns
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -85,10 +86,17 @@ class DrowsinessDetector:
         self._closed = False
         self._last_prediction_ms: int | None = None
         self._unreliable_since_ms: int | None = None
+        self._last_feature_sample: FeatureSample | None = None
+
+    @property
+    def last_feature_sample(self) -> FeatureSample | None:
+        """Raw feature output for parity/evidence from the most recent packet."""
+        return self._last_feature_sample
 
     def process(self, packet: FramePacket) -> DetectionResult:
         if self._closed:
             raise RuntimeError("DrowsinessDetector is closed")
+        self._last_feature_sample = None
         now_ms = int(self._clock_ms())
         age_ms = now_ms - packet.timestamp_ms
         if age_ms < 0:
@@ -97,6 +105,9 @@ class DrowsinessDetector:
             return self._result(SystemStatus.UNRELIABLE, reason="stale frame", frame_age_ms=age_ms)
 
         sample = self.pipeline.process(packet)
+        if not isinstance(sample, FeatureSample):
+            raise TypeError("pipeline must return FeatureSample")
+        self._last_feature_sample = sample
         current_valid = bool(
             sample.face_detected
             and sample.left_eye_valid
@@ -140,7 +151,9 @@ class DrowsinessDetector:
 
         try:
             raw = self._predict(window)
-        except Exception as exc:
+        # Phase 13 is an injected runtime boundary; inference failures become
+        # an explicit ERROR result so the capture/UI loop remains controllable.
+        except Exception as exc:  # noqa: BLE001
             return self._result(SystemStatus.ERROR, sample=sample, reason=f"model inference failed: {exc}")
         self._last_prediction_ms = raw.timestamp_ms
         smoothed = self.smoother.update(raw) if self.smoother is not None else None
@@ -215,8 +228,10 @@ class DrowsinessDetector:
             self.smoother.reset()
         self._last_prediction_ms = None
         self._unreliable_since_ms = None
+        self._last_feature_sample = None
 
     def close(self) -> None:
         if not self._closed:
             self._closed = True
+            self._last_feature_sample = None
             self.pipeline.close()

@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 from numbers import Integral, Real
-from typing import Protocol, Sequence
+from typing import Protocol
 
 import numpy as np
 
@@ -52,7 +54,7 @@ class PredictionBuffer:
         if not indices or any(isinstance(index, bool) or not isinstance(index, Integral) or index < 0 for index in indices):
             raise ValueError("required_validity_indices must contain nonnegative integers")
         if not callable(transformer):
-            raise ValueError("transformer must be callable")
+            raise TypeError("transformer must be callable")
         self.feature_names = names
         self.schema_version = schema_version
         self.sequence_steps = int(sequence_steps)
@@ -110,7 +112,7 @@ class PredictionBuffer:
         if missing_ratio > self.max_missing_ratio:
             return None
         timestamps = [item.timestamp_ms for item in samples]
-        if any(right - left > self.max_gap_ms for left, right in zip(timestamps, timestamps[1:])):
+        if any(right - left > self.max_gap_ms for left, right in pairwise(timestamps)):
             return None
         x = np.stack([item.row for item in samples]).astype(np.float32, copy=False)
         return SequenceWindow(

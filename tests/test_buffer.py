@@ -4,7 +4,6 @@ import pytest
 from src.contracts import TemporalSample
 from src.realtime.buffer import PredictionBuffer
 
-
 FEATURES = tuple(f"f{i}" for i in range(16))
 
 
@@ -15,14 +14,14 @@ def transformer(values, validity):
 
 
 def buffer(**overrides):
-    values = dict(
-        feature_names=FEATURES,
-        schema_version="facial_features_v1",
-        sequence_steps=100,
-        max_missing_ratio=0.2,
-        max_gap_ms=1000,
-        transformer=transformer,
-    )
+    values = {
+        "feature_names": FEATURES,
+        "schema_version": "facial_features_v1",
+        "sequence_steps": 100,
+        "max_missing_ratio": 0.2,
+        "max_gap_ms": 1000,
+        "transformer": transformer,
+    }
     values.update(overrides)
     return PredictionBuffer(**values)
 

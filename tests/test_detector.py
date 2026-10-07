@@ -4,10 +4,15 @@ import numpy as np
 import pytest
 
 from src.calibration.manager import CalibrationManager
-from src.contracts import CalibrationProfile, FeatureSample, FramePacket, SystemStatus, TemporalSample
+from src.contracts import (
+    CalibrationProfile,
+    FeatureSample,
+    FramePacket,
+    SystemStatus,
+    TemporalSample,
+)
 from src.realtime.buffer import PredictionBuffer
 from src.realtime.detector import DrowsinessDetector
-
 
 FEATURES = tuple(f"f{i}" for i in range(16))
 
@@ -80,7 +85,7 @@ def packet(timestamp):
 
 
 def test_warmup_then_predicts_every_second_with_fixed_class_order():
-    detector, pipeline, temporal, model = make_detector()
+    detector, _, _, model = make_detector()
     result = None
     for timestamp in range(0, 10_000, 100):
         clock.current = timestamp
@@ -105,6 +110,19 @@ def test_stale_frame_is_unavailable_without_running_pipeline():
     assert result.system_status is SystemStatus.UNRELIABLE
     assert result.quality["reason"] == "stale frame"
     assert pipeline.processed == 0
+    assert detector.last_feature_sample is None
+
+
+def test_last_feature_sample_tracks_processed_packet_and_clears_on_reset_close():
+    detector, _, _, _ = make_detector()
+    clock.current = 0
+    detector.process(packet(0))
+    assert detector.last_feature_sample is not None
+    assert detector.last_feature_sample.timestamp_ms == 0
+    detector.reset_session()
+    assert detector.last_feature_sample is None
+    detector.close()
+    assert detector.last_feature_sample is None
 
 
 def test_no_face_is_immediate_and_long_gap_resets_history():
@@ -130,12 +148,29 @@ def test_reset_and_close_release_owned_dependencies():
     assert pipeline.closed == 1
 
 
-def test_model_schema_mismatch_is_rejected_before_processing():
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("feature_names", tuple(reversed(FEATURES)), "feature order"),
+        ("schema_version", "other-schema", "schema differ"),
+        ("calibration_mode", "P1", "calibration mode differ"),
+    ],
+)
+def test_model_contract_mismatch_is_rejected_before_processing(field, value, message):
     detector, pipeline, temporal, model = make_detector()
-    model.feature_names = tuple(reversed(FEATURES))
-    with pytest.raises(ValueError, match="feature order"):
+    setattr(model, field, value)
+    with pytest.raises(ValueError, match=message):
         DrowsinessDetector(pipeline=pipeline, calibration=detector.calibration,
             temporal=temporal, buffer=detector.buffer, model=model)
+
+
+def test_pipeline_contract_rejects_non_feature_sample():
+    detector, pipeline, _, _ = make_detector()
+    pipeline.process = lambda packet: object()
+    clock.current = 0
+    with pytest.raises(TypeError, match="FeatureSample"):
+        detector.process(packet(0))
+    assert detector.last_feature_sample is None
 
 
 def test_p1_first_frame_starts_collection_without_duplicate_timestamp_update():
