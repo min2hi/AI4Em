@@ -155,6 +155,46 @@ def test_p1_first_frame_starts_collection_without_duplicate_timestamp_update():
     assert calibration.snapshot.valid_samples == 0
 
 
+def test_p1_completion_resets_history_before_warmup_and_prediction():
+    pipeline = Pipeline()
+    temporal = Temporal()
+    model = Model()
+    model.calibration_mode = "P1"
+    model_calls = []
+    def predict_two_steps(x):
+        model_calls.append(x.shape)
+        return np.array([[.2, .3, .5]], dtype=np.float32)
+    model.predict_proba = predict_two_steps
+
+    def estimate_profile(samples, **context):
+        return CalibrationProfile("P1", True, .3, .28, .1, 0., 0., 0.,
+            context["schema_version"], context["asset_sha256"], context["image_size"], {})
+
+    calibration = CalibrationManager(mode="P1", schema_version="facial_features_v1",
+        asset_sha256="asset", image_size=(2, 2), profile_estimator=estimate_profile,
+        calibration_seconds=1, min_valid_seconds=.5, timeout_seconds=2)
+    feature_buffer = PredictionBuffer(feature_names=FEATURES, schema_version="facial_features_v1",
+        sequence_steps=2, max_missing_ratio=.2, max_gap_ms=1000,
+        transformer=lambda values, validity: values)
+    detector = DrowsinessDetector(pipeline=pipeline, calibration=calibration,
+        temporal=temporal, buffer=feature_buffer, model=model, prediction_interval_ms=100,
+        clock_ms=lambda: clock.current)
+
+    for timestamp in range(0, 1001, 100):
+        clock.current = timestamp
+        result = detector.process(packet(timestamp))
+    assert result.system_status is SystemStatus.WARMING_UP
+    assert calibration.is_complete
+    assert temporal.resets == 1
+    assert len(feature_buffer) == 0
+
+    for timestamp in (1100, 1200):
+        clock.current = timestamp
+        result = detector.process(packet(timestamp))
+    assert result.raw_prediction is not None
+    assert model_calls == [(1, 2, 16)]
+
+
 def test_invalid_model_probability_becomes_error_not_warning_or_exception():
     detector, _, _, model = make_detector()
     model.predict_proba = lambda x: np.array([[np.nan, 0.5, 0.5]], dtype=np.float32)
@@ -164,3 +204,18 @@ def test_invalid_model_probability_becomes_error_not_warning_or_exception():
     assert result.system_status is SystemStatus.ERROR
     assert result.raw_prediction is None
     assert "model inference failed" in result.quality["reason"]
+
+
+@pytest.mark.parametrize("probabilities", [
+    [[-.1, .6, .5]],
+    [[.2, .2, .2]],
+    [[.2, .8]],
+])
+def test_other_invalid_model_outputs_become_error(probabilities):
+    detector, _, _, model = make_detector()
+    model.predict_proba = lambda x: np.asarray(probabilities, dtype=np.float32)
+    for timestamp in range(0, 10_000, 100):
+        clock.current = timestamp
+        result = detector.process(packet(timestamp))
+    assert result.system_status is SystemStatus.ERROR
+    assert result.raw_prediction is None
