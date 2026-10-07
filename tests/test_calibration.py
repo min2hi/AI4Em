@@ -56,17 +56,17 @@ def estimator(samples, **context):
 
 
 def manager(**overrides):
-    values = dict(
-        mode="P1",
-        schema_version="facial_features_v1",
-        asset_sha256="asset",
-        image_size=(640, 480),
-        profile_estimator=estimator,
-        calibration_seconds=30,
-        min_valid_seconds=20,
-        timeout_seconds=60,
-        max_sample_age_ms=100,
-    )
+    values = {
+        "mode": "P1",
+        "schema_version": "facial_features_v1",
+        "asset_sha256": "asset",
+        "image_size": (640, 480),
+        "profile_estimator": estimator,
+        "calibration_seconds": 30,
+        "min_valid_seconds": 20,
+        "timeout_seconds": 60,
+        "max_sample_age_ms": 100,
+    }
     values.update(overrides)
     return CalibrationManager(**values)
 
@@ -117,7 +117,7 @@ def test_retry_resets_samples_timing_and_failure():
 ])
 def test_incompatible_estimated_profile_fails(field, value):
     def incompatible(samples, **context):
-        values = dict(mode="P1", schema="facial_features_v1", asset="asset", size=(640, 480))
+        values = {"mode": "P1", "schema": "facial_features_v1", "asset": "asset", "size": (640, 480)}
         mapping = {"schema_version": "schema", "asset_sha256": "asset", "image_size": "size"}
         values[mapping.get(field, field)] = value
         return profile(**values)

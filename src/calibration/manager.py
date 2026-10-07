@@ -6,11 +6,12 @@ profile compatibility for realtime sessions.
 """
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
-import math
 from numbers import Integral, Real
-from typing import Protocol, Sequence
+from typing import Protocol
 
 from src.contracts import CalibrationProfile, FeatureSample
 
@@ -49,7 +50,7 @@ class ProfileEstimator(Protocol):
 def _positive_milliseconds(value: Real, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
         raise ValueError(f"{name} must be a finite number")
-    milliseconds = int(round(float(value) * 1000.0))
+    milliseconds = round(float(value) * 1000.0)
     if milliseconds <= 0:
         raise ValueError(f"{name} must be positive")
     return milliseconds
@@ -240,7 +241,9 @@ class CalibrationManager:
                 image_size=self.image_size,
             )
             self._profile = self._validate_profile(profile)
-        except Exception as exc:
+        # Phase 9 is an injected boundary; any estimator failure must become a
+        # retryable calibration failure instead of terminating the live loop.
+        except Exception as exc:  # noqa: BLE001
             return self._fail(f"profile estimation failed: {exc}")
         self._state = CalibrationState.COMPLETE
         self._reason = "calibration complete"
