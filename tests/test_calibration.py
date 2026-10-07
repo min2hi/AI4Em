@@ -154,3 +154,43 @@ def test_timestamps_must_increase():
     calibration.start(100)
     with pytest.raises(ValueError, match="strictly increase"):
         calibration.update(sample(100))
+
+
+def test_timeout_is_absolute_even_when_late_sample_would_reach_valid_minimum():
+    calibration = manager(calibration_seconds=1, min_valid_seconds=0.5, timeout_seconds=2)
+    calibration.start(0)
+    for timestamp in range(100, 701, 100):
+        calibration.update(sample(timestamp))
+    result = calibration.update(sample(2501))
+    assert result.state is CalibrationState.FAILED
+    assert result.profile is None
+    assert "timed out" in result.reason
+
+
+def test_calibration_cannot_join_sources_or_reuse_frame_indices():
+    calibration = manager()
+    calibration.start(0)
+    calibration.update(sample(100))
+    changed_source = sample(200)
+    changed_source = FeatureSample(
+        changed_source.timestamp_ms, changed_source.frame_index, "camera:1",
+        changed_source.ear_left, changed_source.ear_right, changed_source.ear_mean,
+        changed_source.mar, changed_source.pitch, changed_source.yaw, changed_source.roll,
+        changed_source.face_detected, changed_source.left_eye_valid, changed_source.right_eye_valid,
+        changed_source.mouth_valid, changed_source.pose_valid, changed_source.reprojection_error_norm,
+    )
+    with pytest.raises(ValueError, match="different sources"):
+        calibration.update(changed_source)
+
+    calibration.start(1000)
+    first = sample(1100)
+    calibration.update(first)
+    repeated_frame = FeatureSample(
+        1200, first.frame_index, first.source_id,
+        first.ear_left, first.ear_right, first.ear_mean, first.mar,
+        first.pitch, first.yaw, first.roll, first.face_detected,
+        first.left_eye_valid, first.right_eye_valid, first.mouth_valid,
+        first.pose_valid, first.reprojection_error_norm,
+    )
+    with pytest.raises(ValueError, match="frame indices"):
+        calibration.update(repeated_frame)

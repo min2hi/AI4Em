@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 import math
 from numbers import Integral, Real
-from typing import Callable, Protocol, Sequence
+from typing import Protocol, Sequence
 
 from src.contracts import CalibrationProfile, FeatureSample
 
@@ -187,9 +187,19 @@ class CalibrationManager:
         if self._state is not CalibrationState.COLLECTING:
             raise RuntimeError("calibration is not collecting")
         timestamp_ms = _timestamp(sample.timestamp_ms)
+        if not isinstance(sample.source_id, str) or not sample.source_id:
+            raise ValueError("calibration source_id must be a non-empty string")
+        frame_index = _timestamp(sample.frame_index, "frame_index")
         assert self._start_ms is not None and self._last_ms is not None
         if timestamp_ms <= self._last_ms:
             raise ValueError("calibration timestamps must strictly increase")
+        if self._source_id is None:
+            self._source_id = sample.source_id
+        elif sample.source_id != self._source_id:
+            raise ValueError("calibration cannot join different sources")
+        if self._frame_index is not None and frame_index <= self._frame_index:
+            raise ValueError("calibration frame indices must strictly increase")
+        self._frame_index = frame_index
 
         previous_valid = self._last_sample_valid
         current_valid = _sample_is_valid(sample)
@@ -202,6 +212,8 @@ class CalibrationManager:
         self._last_ms = timestamp_ms
 
         elapsed_ms = timestamp_ms - self._start_ms
+        if elapsed_ms > self._timeout_ms:
+            return self._fail("calibration timed out before profile completion")
         if elapsed_ms >= self._target_ms and self._valid_duration_ms >= self._min_valid_ms:
             return self.finish()
         if elapsed_ms >= self._timeout_ms:
@@ -212,6 +224,8 @@ class CalibrationManager:
         if self._state is not CalibrationState.COLLECTING:
             raise RuntimeError("calibration is not collecting")
         assert self._start_ms is not None and self._last_ms is not None
+        if self._last_ms - self._start_ms > self._timeout_ms:
+            return self._fail("calibration timed out before profile completion")
         if self._last_ms - self._start_ms < self._target_ms:
             raise RuntimeError("calibration target duration has not elapsed")
         if self._valid_duration_ms < self._min_valid_ms:
@@ -244,6 +258,8 @@ class CalibrationManager:
         self._last_sample_valid = False
         self._valid_duration_ms = 0
         self._samples: list[FeatureSample] = []
+        self._source_id: str | None = None
+        self._frame_index: int | None = None
         self._profile: CalibrationProfile | None = None
         self._reason = "not started"
         return self.snapshot
