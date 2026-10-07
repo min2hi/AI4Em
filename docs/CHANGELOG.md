@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-07 — Người 2 Phase17 realtime buffer/detector core
+
+- Thêm `PredictionBuffer`: cửa sổ fixed-length theo ordered features, reset theo segment/gap, reject current-invalid và missing ratio, chỉ xuất `SequenceWindow` hữu hạn sau transformer/scaler được inject.
+- Thêm `DrowsinessDetector`: orchestration raw pipeline→calibration→temporal→buffer→model, cadence1s, stale/no-face/current-invalid status, P0/P1 mode/schema/order checks, reset/close và probability validation.
+- Thêm13 behavioral regressions cho100-step window, missing20%, gap/segment, cadence, stale, no-face reset, P1 startup và invalid model output. Core chưa được gọi native-complete cho đến khi Phase9/10/12/13 cung cấp estimator/temporal/scaler/bundle thật.
+
 ## 2026-10-07 — Người 2 Phase16 calibration lifecycle core
 
 - Thêm `CalibrationManager` cho P0/P1 với state `IDLE/COLLECTING/COMPLETE/FAILED`, wall-clock 30s, tối thiểu 20s valid, timeout60s, retry/reset và profile freeze.
