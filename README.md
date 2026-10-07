@@ -2,7 +2,7 @@
 
 Tài liệu thiết kế đã được chuyển vào **[docs/README.md](docs/README.md)**. Roadmap triển khai: [docs/16_Development_Roadmap.md](docs/16_Development_Roadmap.md).
 
-## Phase 0–3
+## Phase 0–7
 **Trạng thái nghiệm thu:** Phase 0 đạt. Code Phase 1–2 đã có nhưng dataset mới **34/45 video, 12/15 subjects, 8,206,607,880 bytes (~7.64 GiB)**. Drive chặn 11 file bằng “Quota exceeded”; **Phase 1–2 chưa đạt full acceptance**. Exploration chạy trên dữ liệu thật và exit 1 đúng để chặn báo thành công sai. Xem [Dataset Access](docs/Dataset_Access.md) và [changelog](docs/CHANGELOG.md).
 
 - Python **3.12 x64**, môi trường riêng `.venv/`.
@@ -15,7 +15,7 @@ Kế hoạch UTA subset: **15 người × 3 trạng thái = 45 video**, ba ngư�
 
 **Phạm vi làm việc được user chốt:** tiếp tục development với **34 video hiện có / 12 subjects**, không đợi đủ45, không tự tải thêm. Kế hoạch acquisition45 và ledger11 missing được giữ để truy nguyên, không sửa thành “đã đủ”. Phase8 xử lý snapshot34 sau khi Phase7 qua QC; Phase9 chia theo subject/official fold với số lượng thực tế, không cố định9/3/3 hoặc36/12/12. Subject51 thiếu Alert nên P1 phải abstain, không lấy Low Vigilance làm baseline hoặc tự đổi sang P0.
 
-Phase 3 đã có `VideoReader`, `FaceLandmarkDetector` và preview chưa mirror. Ba clip thật, no-face, camera capture, timestamp/sampling và release đã chạy; test **rút camera vật lý/chuyển face→no-face trực tiếp** chưa được quan sát. Xem [báo cáo Phase 3](docs/Phase3_Report.md); đủ prerequisite để bắt đầu Phase 4–6 trên clip nhỏ, không phải nghiệm thu toàn hệ thống.
+Phase 3–5 đã có reader/detector/EAR/MAR và recorded eye/mouth evidence; **178 tests** là kết quả lịch sử. Phase 6–7 đã có signed pose, quality profile đo thật, pipeline dùng chung và streaming Parquet builder/CLI. Final regression: **394 passed in12.01s**. Ba video subject04 đã xử lý full EOF, tổng36,755 rows; round-trip và resume3/3 cached đạt. Bằng chứng tại `runs/phase6/`, `runs/phase7/`. Webcam Phase7/45s:806 emitted, tất cả no-face, capture/model release; **live pose signs, physical occlusion/face transitions và disconnect chưa quan sát**. Chưa calibration/temporal/classifier/training/realtime UI cuối cùng.
 
 ## Cài lại môi trường — PowerShell
 ```powershell
@@ -44,8 +44,19 @@ Chạy tại project root, không dùng Python global/Conda mặc định:
 .venv/Scripts/python.exe -m scripts.check_environment --sample-video data/raw/uta_rldd/04/0.mp4
 .venv/Scripts/python.exe -m pytest -q
 .venv/Scripts/python.exe -m scripts.preview_landmarks --video data/raw/uta_rldd/04/0.mp4 --seconds 12
-.venv/Scripts/python.exe -m scripts.preview_landmarks --camera 0 --seconds 8
+.venv/Scripts/python.exe -m scripts.preview_landmarks --camera 0 --seconds 45
 ```
+
+### Raw feature extraction — Phase6/7
+```powershell
+.venv/Scripts/python.exe -m scripts.preprocess --config configs/preprocessing.yaml --manifest data/processed/manifest.parquet --video-id 04_0 --video-id 04_5 --video-id 04_10 --output-dir runs/phase7/raw_features_smoke --report-dir runs/phase7/full_three_clips
+.venv/Scripts/python.exe -m scripts.measure_quality --video data/raw/uta_rldd/04/0.mp4 --video data/raw/uta_rldd/04/5.mp4 --video data/raw/uta_rldd/04/10.mp4 --start-ms 0 --end-ms 12000 --annotations runs/phase7/quality_annotations.json --report-dir runs/phase7/quality_measurements
+```
+`preprocess` bắt buộc chọn repeated `--video-id` hoặc explicit `--all-working-snapshot`; không mặc định chạy34 video. `--all-working-snapshot` chưa được thực thi trong Phase7. Output mặc định `data/processed/raw_features/`, report mặc định `runs/phase7/preprocess/`; không sửa manifest hoặc tự tải thêm. Không hỗ trợ nhiều writer đồng thời vào cùng output directory.
+
+Quality profile nằm trong `configs/quality_policy_v1.json`, SHA được pin trong YAML:12 frame xem trực tiếp, giữ12/12 clean và reject36/36 degraded controls. Đây là development envelope subject04, **không universal calibration**. Phase6/7 dùng raw absolute yaw35°/pitch25°, không giả baseline cá nhân0. Full `04_0` chỉ còn2767/12291 left-eye và2873/12291 mouth valid; pose/camera gate gây coverage bias, phải xem coverage theo source/lớp trước Phase8/training, không nới gate theo nhãn lớp để che missing.
+
+Muốn bật `quality.eyes_occluded`, phát hành bản frozen report/config tương ứng (cùng optical evidence, đổi explicit operator mode và SHA); startup kiểm tra policy/hash, không cho override âm thầm. Mode chỉ disable eyes, không tự phát hiện kính râm. Camera mặc định approximate; calibrated mode cần `reference_size: [W,H]`, finite3×3 `matrix`, OpenCV distortion vector. K resize theo kích thước frame thực.
 
 Kiểm tra đuôi/tên video trong `data/acquisition/uta_subset_plan.json` nếu chạy smoke với video khác. Downloader kiểm tra file đã có bằng size/CRC, không tải lại video hợp lệ; partial thuộc kế hoạch được dọn trước preflight và video chưa hoàn tất phải tải lại từ đầu. Không thêm NTHU/YawDD và không tải các video ngoài kế hoạch 45 file.
 
@@ -55,6 +66,19 @@ Notebook: mở `notebooks/01_dataset_exploration.ipynb` bằng VS Code và chọ
 
 Preview dùng MediaPipe Tasks VIDEO, RGB và session mới mỗi video. `--headless` không mở cửa sổ; `--save-overlay` là opt-in lưu ảnh mặt, phải kiểm tra quyền công bố. Mặc định không lưu ảnh. Không bật `--constant-fps-verified` chỉ vì FPS metadata dương: flag này là xác nhận của caller sau khảo sát constant-FPS độc lập. `--seconds` chỉ kiểm tra prefix; chạy file headless không pace như thời gian thực, FPS report là throughput xử lý, không FPS camera.
 
+Preview gọi `FeaturePipeline.process` cho cả headless/GUI; hiển thị gated EAR/MAR/pose hoặc `N/A`, approximate/calibrated mode và categorical quality reasons. Face present không đồng nghĩa feature usable; oblique pose mask cả eyes/mouth, optical failure mask mọi channel; valid closed vertical span vẫn là0. JSON feature summaries dùng valid-only min/max/mean hoặc null; `pipeline` chứa lifecycle/counters/stage timings, `last_quality` có metrics/reasons. `inference_ms` vẫn detect-only, không gộp geometry/render. Không suy blink/yawn/Drowsy từ một raw measurement.
+
+### Working snapshot và independent audit — Phase8
+```powershell
+.venv/Scripts/python.exe -m scripts.process_snapshot --run-dir runs/phase8 --config configs/preprocessing.yaml --manifest data/processed/manifest.parquet --output-dir data/processed/raw_features
+.venv/Scripts/python.exe -m scripts.audit_features --run-dir runs/phase8 --output-dir data/processed/raw_features --status-manifest data/processed/extraction_status.parquet
+```
+Chạy hai lệnh **tuần tự**, không có writer khác trong output directory. Runner freeze byte-copy manifest/YAML cùng resolved signature, source/program hashes và acquisition missing IDs dưới `<run-dir>/snapshot/`; checkpoint `report.json` sau từng video, giữ pending/completed/cached/failed. Chạy lại cùng run-dir phải khớp freeze; đổi dữ liệu/config/assets/code thì tạo snapshot/run-dir mới, không ghi đè provenance cũ. Resume vẫn dùng complete-pair SHA/schema/fingerprint checks của builder, không skip theo file existence.
+
+Audit không trích xuất lại hoặc sửa feature pairs: reopen toàn bộ rows, kiểm time/index/labels/null/masks/counts và release/provenance, xuất `audit.json`/`coverage.csv`. Coverage frame-weighted theo video/subject/class, không lấy trung bình tỷ lệ từng video; failed members giữ riêng support, zero-row denominator là null. Quality reason counts có thể chồng lấp, không phải tổng rejected frames.
+
+`data/processed/manifest.parquet` giữ nguyên acquisition/source `status=ok/error`. `extraction_status.parquet` là sidecar có source fields/status, extraction/audit status và snapshot/hash provenance; không dùng việc extraction complete để sửa weak labels, folds hay quyền ảnh. Working denominator34 khác acquisition45; thiếu11 nguồn vẫn giữ trong freeze/report. Feature cache này chưa phải calibrated sequences hoặc training-ready classifier data.
+
 ## Output
 - `models/assets/`: Face Landmarker `.task`, canonical OBJ và metadata URL/SHA256.
 - `data/acquisition/`: remote inventory, kế hoạch subset, permissions và download receipts/report.
@@ -62,6 +86,11 @@ Preview dùng MediaPipe Tasks VIDEO, RGB và session mới mỗi video. `--headl
 - `runs/phase0/`: báo cáo môi trường, resolved config và ảnh cửa sổ Qt thử nghiệm.
 - `runs/phase2/`: exploration report, manifest CSV và biểu đồ không có ảnh mặt.
 - `runs/phase3/`: reports clip/camera/no-face, throughput/drop và optional overlay; screenshot bằng chứng chỉ lấy subject 04 có quyền công bố.
+- `runs/phase4/`: EAR three-clip reports, eye-state candidates và actual window capture.
+- `runs/phase5/`: bằng chứng lịch sử EAR/MAR, native blank, webcam và cửa sổ; không bị ghi đè bởi Phase6/7.
+- `configs/quality_policy_v1.json`: frozen optical evidence và policy, không chứa ảnh mặt.
+- `runs/phase6/`: numerical/native pose proof, three-clip prefix, actual windows và webcam.
+- `runs/phase7/`: measured quality, actual gated windows/controls, native blank/parity, selected-three EOF Parquet+metadata và resume. Default preview report: `runs/phase7/preview/preview_report.json`.
 - `notebooks/01_dataset_exploration.ipynb`: đọc manifest để team xem thống kê.
 
-Video, ảnh thử nghiệm, environment và output lớn được `.gitignore`. `image_publishable` chỉ là quyền công bố ảnh, không phải quyền tái phân phối dataset. Nhãn UTA áp cho cả video, không chính xác từng frame. Phase 4 trở đi, training và UI cuối cùng chưa thuộc phần triển khai này.
+Video, ảnh thử nghiệm, environment và output lớn được `.gitignore`. `image_publishable` chỉ là quyền công bố ảnh, không phải quyền tái phân phối dataset. Nhãn UTA áp cho cả video, không chính xác từng frame. Phase8 toàn snapshot, calibration/training và UI cuối cùng chưa thực thi.

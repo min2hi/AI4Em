@@ -2,7 +2,7 @@
 
 **Hệ thống AI phát hiện sớm dấu hiệu giảm tỉnh táo của tài xế qua khuôn mặt và diễn biến theo thời gian.**
 
-Bộ này gồm **20 tài liệu kỹ thuật + README**, đặt trong `docs/`. **Phase 0 đã đạt smoke; code Phase 1–2 có nhưng full acceptance bị chặn bởi dữ liệu còn thiếu (34/45 video). Phase 3 đã triển khai và chạy trên clip/camera thật; physical disconnect và live face→no-face transition chưa được quan sát.** Xem [báo cáo Phase 3](Phase3_Report.md), [Dataset Access](Dataset_Access.md), [changelog](CHANGELOG.md) và [README project](../README.md). Chưa train classifier buồn ngủ; các phase 4–24 vẫn là thiết kế.
+Bộ này gồm **20 tài liệu kỹ thuật + README**, đặt trong `docs/`. **Phase0 đạt smoke; full acquisition Phase1–2 mới có34/45 video. Phase3–7 đã có reader/detector/EAR/MAR/signed pose, frozen quality, shared raw pipeline và streaming Parquet builder.** Phase7 đã QC3 video full EOF/36,755 rows, round-trip/resume và394 tests; chưa chạy toàn snapshot34. Live sign/physical occlusion/face transitions/disconnect vẫn chưa quan sát; camera45s Phase7 có806 no-face frames. Xem [roadmap Phase6/7](16_Development_Roadmap.md#phase-6--head-pose-estimation), [báo cáo Phase3 lịch sử](Phase3_Report.md), [Dataset Access](Dataset_Access.md), [changelog](CHANGELOG.md) và [README project](../README.md). Chưa train classifier; Phase8–24 chưa thực thi.
 
 ## Đọc theo nhu cầu
 - **Mới vào team:** đọc 01 → 02 → 05, sau đó xem các mốc trong 16.
@@ -76,11 +76,11 @@ Tài liệu mỗi phần giữ ngắn; roadmap dài hơn vì phải đủ input/
 Thông tin nghiên cứu kiểm tra ngày **06/10/2026**, có link nguồn ở 03/04/06. Phân biệt:
 1. **Đã đọc nguồn:** UTA có 60 người/180 video và five-fold protocol; NTHU cần ký agreement; YawDD archive có 322+29 video và chưa có nhãn event.
 2. **Đề xuất thiết kế:** FPS, window, proxy thresholds, architecture, warning policy; phải kiểm chứng bằng experiment.
-3. **Chưa xác minh bằng runtime:** cài toàn stack trên máy đích, tải đủ dataset, memberships trong archive, model metrics, FPS/false alarms. Không xem metadata package là lockfile đã tested.
+3. **Đã runtime/chưa đủ acceptance:** stack CPU Phase0 và CV Phase3–5 đã chạy; downloaded subset có official membership/provenance. Chưa tải đủ acquisition45, chưa human webcam/talking/disconnect acceptance, chưa trained-model metrics/false alarms hay GPU smoke. Không gọi throughput offline là FPS camera hoặc dùng metadata package thay lockfile đã tested.
 
 UTA không có onset labels chính xác nên chưa đo được “cảnh báo sớm hơn ngủ gật bao nhiêu giây”. EAR proxy không phải phép đo PERCLOS80 sinh lý chuẩn. Kính râm che mắt và mất mặt phải hiện không đủ tin cậy, không giả vờ Alert. Demo chỉ trong điều kiện an toàn; không dùng thay hệ thống an toàn đã chứng nhận.
 
 ## Cách giao phase tiếp theo
-> Implement Phase 4 according to 16_Development_Roadmap.md. Đọc công thức ở 06 và contract ở 15; viết tests và chạy webcam/clip có consent. Không tự đổi feature schema hoặc triển khai toàn project.
+> Implement Phase 6 according to 16_Development_Roadmap.md. Đọc coordinate/sign/reprojection convention ở06 và contract15; viết tests và chạy clip có consent. Không tự đổi feature schema hoặc triển khai toàn project.
 
 User đã chốt tiếp tục với **34 video hiện có**, không chờ full-acquisition45. Sau QC Phase7, Phase8 có thể xử lý working snapshot đã freeze và Phase9 xây subject-independent splits/eligibility theo counts thực tế. Full-acquisition gate45 vẫn chưa đạt; không che missing/P1 calibration failure. Không cần dựng React/FastAPI, YOLO, Transformer hoặc tối ưu GPU trước khi CV/ML được kiểm chứng.

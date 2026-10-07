@@ -1,8 +1,8 @@
 # 16 — Development Roadmap
 
-Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 4 according to 16_Development_Roadmap.md”**. Mọi phase tuân theo contract [15](15_Module_Specification.md), config [14](14_Project_Structure.md) và nguồn [03–04](03_Research_Background.md).
+Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 6 according to 16_Development_Roadmap.md”**. Mọi phase tuân theo contract [15](15_Module_Specification.md), config [14](14_Project_Structure.md) và nguồn [03–04](03_Research_Background.md).
 
-**Phase 0 đã đạt runtime verification; code Phase 1–2 đã triển khai, nhưng full acceptance chưa đạt vì mới có 34/45 video (lỗi nguồn gần nhất: Drive quota). Phase 3 đã triển khai và smoke clip/camera thật; physical disconnect và live face→no-face transition chưa được quan sát.** Xem [báo cáo Phase 3](Phase3_Report.md), [changelog](CHANGELOG.md), [Dataset Access](Dataset_Access.md) và report trong `runs/`. “Acceptance” các phase 4–24 vẫn là mục tiêu, không phải kết quả đã chạy. Chưa có classifier buồn ngủ đã train.
+**Phase0 đạt runtime verification; code Phase1–2 đã triển khai nhưng full acceptance chưa đạt vì34/45 video (Drive quota). Phase3–5 đã có reader/detector/EAR/MAR và runtime proof trên clip/camera; confirmed talking, human webcam transitions và physical disconnect chưa quan sát.** Xem kết quả Phase4/5 bên dưới, [báo cáo Phase3 lịch sử](Phase3_Report.md), [changelog](CHANGELOG.md), [Dataset Access](Dataset_Access.md) và reports trong `runs/`. Acceptance Phase4/5 có phần đã chạy/phần blocked được ghi riêng; Phase6–24 vẫn là mục tiêu thiết kế. Chưa có classifier buồn ngủ đã train.
 
 **Phạm vi development user đã chốt sau Phase3:** tiếp tục với **34 video hiện có/12subjects**, không đợi45/180 hoặc tự tải thêm. Acquisition45 và11 missing vẫn là ledger/gate nguồn lịch sử; không đổi chúng thành thành công. Phase8/9 dùng working snapshot đã freeze, cardinality thực tế và protocol eligibility; không ép36/12/12 hay9/3/3. Subject51 thiếu Alert làm P1 abstain; fold5 P1 không có accepted subject, phải báo blocked/undefined. Tham chiếu04/09/10/11.
 
@@ -88,6 +88,8 @@ Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 4 a
 - **Expected result:** EAR left/right/mean và validity. Lưu bằng chứng acceptance trong run log để teammate kiểm tra lại.
 - **Possible problems:** Dùng distance normalized gây sai aspect ratio; số landmark khác schema fail rõ.
 
+**Kết quả Phase4 (2026-10-06):** `eye.py` và41 deterministic tests đã có; pixel/aspect/scale/translation, independent masks, schema/epsilon/closed0 đều qua. Ba prefix12s subject04:723 geometry-valid EAR frames; `runs/phase4/three_clips/preview_report.json`. Trên `04/10.mp4`, ảnh mắt mở0ms EAR mean0.329221 và mắt nhắm6280ms0.022919 đã được xem (`runs/phase4/visual/ear_candidates.json` và ảnh kèm). Actual preview HWND giữ đúng anatomical sides/unmirrored và aspect. Camera có người mở/nhắm mắt chưa được quan sát; recorded transition đạt, **human webcam acceptance vẫn pending**.
+
 ## Phase 5 — MAR extraction
 
 - **Objective / Goal:** Đo miệng mà không nhầm mở miệng với nhãn ngủ.
@@ -101,6 +103,14 @@ Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 4 a
 - **Acceptance criteria / Definition of Done:** Formula thống nhất và N/A khi invalid; overlay tăng khi mở miệng, report talking ambiguity.
 - **Expected result:** MAR và mouth_valid. Lưu bằng chứng acceptance trong run log để teammate kiểm tra lại.
 - **Possible problems:** Outer/inner lip lẫn; threshold từ công thức khác không áp dụng.
+
+**Kết quả Phase5 (2026-10-06):** `mouth.py` và38 deterministic tests đã có; project formula, non-square/scale/translation, cả3 vertical pairs, invalid/closed0/epsilon và validMAR>1 đều qua. Preview kết hợp EAR/MAR, canonical mouth segments, readable text ở actual640×360/362×640 và finite/null summaries. Full regression **178 passed in6.96s**; geometry và preview reviews không có actionable findings.
+
+Ba prefix12s/cả ba class:723 face/geometry-valid frames (`runs/phase5/three_clips/preview_report.json`), chưa là quality guarantee. Sequential20FPS `04/10.mp4` đến585400ms:11709 face frames, capture/model release; raw lips được xem khép0ms MAR0.005320 → hé mở585400ms0.081579 (`runs/phase5/mouth_sequence/mouth_sequence.json`, `raw_mouth_pair.png`). Đây không phải bằng chứng nói chuyện/ngáp hay nhãn ngủ.
+
+Native blank và15-frame15FPS synthetic AVI full EOF trả tất cả NaN/false → previewN/A/report null (`runs/phase5/no_face/no_face_report.json`), không upsample và release. Webcam0 chạy45s:1326 decoded/821 emitted/505 dropped, cả821 no-face; mọi geometry summary valid0/invalid821/null aggregates (`runs/phase5/webcam/preview_report.json`), không lưu ảnh. **Nói chuyện có xác nhận, human webcam transitions và physical disconnect vẫn blocked** vì không có người/thao tác thiết bị trong session.
+
+QC discovery5FPS decode đủ3 clip subject04, không toàn dataset (`runs/phase5/discovery/discovery.json`). Numeric maximum ở `04/5.mp4` khi quay đầu, không phải observed mouth opening; không gate/classify bằng ratio hoặc có-face. Quality/pose xử lý ở Phase6/7 sau. Prerequisite code để bắt đầu Phase6 đã có; không claim full Phase4/5 hardware acceptance.
 
 ## Phase 6 — Head pose estimation
 
@@ -116,6 +126,10 @@ Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 4 a
 - **Expected result:** góc độ, normalized reprojection error. Lưu bằng chứng acceptance trong run log để teammate kiểm tra lại.
 - **Possible problems:** Canonical thứ index+1; mouth motion, camera intrinsics sai, Euler discontinuity.
 
+### Thực thi 2026-10-07 — Phase6
+Code numerical/preview đã có; sửa canonical reflection thành D=diag(1,−1,−1), signed Euler theo06/15, không offset180. Synthetic neutral/từng trục±10/combined, resize nonuniform, distortion, hull/depth/singular/failure/RMS boundary đã qua regression; Phase6 targeted105 tests green. Native ba subject04 prefixes12s và actual landscape/portrait windows30s đã xem, approximate K và canonical SHA được báo. Webcam45s Phase6 có814 emitted/all no-face, reader/model release. **Live down/up/yaw/roll đủ hai dấu và physical occlusion/transition/disconnect chưa quan sát**, không full hardware PASS. Evidence `runs/phase6/`.
+
+
 ## Phase 7 — Feature extraction pipeline
 
 - **Objective / Goal:** Một pipeline raw dùng chung offline/realtime.
@@ -130,13 +144,23 @@ Roadmap dùng để giao từng phase cho coding agent: **“Implement Phase 4 a
 - **Expected result:** FeatureSample/Parquet theo14 + metadata/report. Lưu bằng chứng acceptance trong run log để teammate kiểm tra lại.
 - **Possible problems:** Schema drift, duplicate cv2 conversion, ghi partial file như complete.
 
+### Thực thi 2026-10-07 — Phase7
+`quality.py`, shared `pipeline.py`, working-manifest validator, streaming `builder.py`, measurement/preprocess CLI đã có. Shared contracts/storage columns giữ nguyên; labels chỉ join builder. Working34 rows/12subjects và51_5 partial coverage qua working validation, strict acquisition vẫn reject. Numeric optical profile thật tại `configs/quality_policy_v1.json`:12 reviewed clean giữ12/12,36 degraded controls reject36/36; source/program/asset hashes và exact accepted-report SHA lưu. Không tune drowsiness accuracy.
+
+Native full EOF chọn04_0/04_5/04_10: rows12291/12149/12315, last source timestamps614520/607400/615720ms, tổng36,755. Reopen kiểm schema/null/strict time/index/labels/count/commit hashes; rerun3/3 cached, không load native để extract lại. Native blank15FPS15frames giữ15 null rows, saved5-packet replay/native parity trong1e-6. Actual gated landscape/portrait, manual eyes-only mode, Gaussian blur/dark controls và profile9000ms đã xem. `04_5@416000ms` trong full sequential run mới là no-face/null; không gán việc này riêng cho pose gate hay coi old highMAR là mouth opening.
+
+Final suite **394 passed in12.01s**; hai scoped reviews clean sau sửa preview cleanup isolation (regression RED/GREEN). Windows writable-fsync và numeric35-vs35.0 frozen policy regressions cũng fail-before/pass-after. Webcam Phase7/45s:1327 decoded/806 emitted/521 dropped, all806 no-face, QPC timestamps và release; live human checklist vẫn blocked vì chưa có quan sát người/thiết bị tương tác.
+
+**Coverage risk:** full04_0 left eye2767/12291 vàmouth2873/12291 valid; oblique reason9361 frames dưới raw absolute pose gate. Approximate K/generic face/raw thresholds không là personal calibration; raw extraction/storage QC đạt không chứng minh đủ coverage cho training. Giữ missing/provenance, xem coverage theo source/lớp ởPhase8; không class-driven nới gate. Không chạy all34, download, split/calibrate/train. Evidence `runs/phase7/full_three_clips/`, `resume/`, `native_blank/`, `quality_measurements/`, `quality_surface/`, `visual/`, `webcam/`.
+
+
 ## Phase 8 — Process working dataset snapshot
 
 - **Objective / Goal:** Có processed features đủ để train không đọc raw mỗi epoch.
 - **Prerequisites / Dependencies:** Phase 7 và manifest verified.
-- **Files to create:** data/processed/raw_features/<video_id>.parquet; runs/preprocessing_<id>/report.json
-- **Files to modify:** scripts/preprocess.py resume theo hash nếu cần; data/processed/manifest.parquet status.
-- **Functions/classes:** FeatureDatasetBuilder.build tiếp tục contract đã chốt.
+- **Files to create:** data/processed/raw_features/<video_id>.parquet và companion metadata; data/processed/extraction_status.parquet; runs/<snapshot>/snapshot/{manifest.parquet,preprocessing.yaml,snapshot.json}, report.json, audit.json, coverage.csv.
+- **Files to modify:** scripts/preprocess.py resume theo hash chỉ nếu cần; giữ nguyên source manifest `data/processed/manifest.parquet` và `status=ok/error`, ghi extraction/audit status ở sidecar riêng để không trộn acquisition verification với feature quality.
+- **Functions/classes:** FeatureDatasetBuilder.build giữ contract Phase7; freeze_snapshot/run_snapshot trong preprocessing/snapshot.py; audit_snapshot trong preprocessing/audit.py; scripts.process_snapshot và scripts.audit_features.
 - **Input → Output:** Working manifest snapshot đã freeze (hiện34 verified UTA videos) → feature files + coverage/error report từng source/lớp; không yêu cầu đủ acquisition45 hoặc full180.
 - **Technical tasks / Implementation notes:** Sequential trước; checkpoint per video. Freeze source paths/hashes/config, measure storage/time. Snapshot denominator34 và planned-acquisition45 ghi riêng; failure/rejection không bị xóa. Khi thêm nguồn, version snapshot/experiment mới.
 - **Tests:** Re-open mỗi output; timestamp strictly increasing, feature bounds/NaN, class counts, spot-check overlay các quality thấp.

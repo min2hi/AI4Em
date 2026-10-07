@@ -2,6 +2,8 @@
 
 Ngày kiểm tra: **2026-10-06**. Đối chiếu Phase 3 trong [roadmap](16_Development_Roadmap.md), [module contracts](15_Module_Specification.md), [feature topology](06_Feature_Engineering.md) và [test strategy](17_Testing_Strategy.md).
 
+**Snapshot lịch sử trước Phase4/5:** bảng readiness và số test bên dưới mô tả thời điểm nghiệm thu Phase3, không thay thế trạng thái hiện tại. EAR/MAR đã triển khai sau đó; xem [roadmap Phase4/5](16_Development_Roadmap.md#phase-4--ear-extraction) và [changelog](CHANGELOG.md). Human webcam transitions/physical disconnect vẫn chưa quan sát; giữ nguyên bằng chứng Phase3.
+
 ## Kết luận
 **Code Phase 3 đã triển khai, có runtime proof cho detector/reader/overlay/no-face và camera capture. Đủ prerequisite kỹ thuật để bắt đầu Phase 4–6 trên clip nhỏ. Chưa claim nghiệm thu hardware đầy đủ hoặc codebase hoàn tất mọi yêu cầu trong docs.** Chưa quan sát face→no-face trực tiếp trên webcam hay rút camera vật lý. Dữ liệu vẫn thiếu 11/45 video; không training hoặc classifier đã học.
 

@@ -1,11 +1,38 @@
 # Changelog
 
+## 2026-10-07 — Team handoff và GitHub publication policy
+
+- Thêm bốn tài liệu `Team_01`–`Team_04`: evaluation, realtime core, alerts/camera worker và desktop UI/startup; có ownership, prerequisites, tài liệu nguồn và checklist nghiệm thu bằng evidence thật.
+- `.gitignore` loại toàn bộ `data/`, `runs/`, môi trường local, dataset media/archives, generated model weights và secret/key files khỏi các lần add mới. Dataset và run artifacts vẫn giữ local; ignore không tự xóa file đã được track trong lịch sử.
+
+## 2026-10-07 — Phase6 signed pose và Phase7 raw pipeline/builder
+
+- Thêm stateless six-point `HeadPoseEstimator`, proper canonical D=diag(1,−1,−1), signed display Euler, calibrated/approximate K resize và hull/depth/singular/RMS guards. Không offset180 hoặc fake neutral. Sửa convention docs06/15, giữ shared records.
+- Thêm fixed256 `measure_quality`/immutable `QualityGate`, measurement CLI và frozen `configs/quality_policy_v1.json`:12 visually reviewed clean samples giữ12/12,36 dark/overexposure/Gaussian controls reject36/36. Actual thresholds/report SHA pin trong preprocessing YAML; no profile→startup fail, không class-driven tuning/baseline0.
+- `FeaturePipeline` sở hữu một native session; raw gated samples có strict identity/time/index, independent masks/mean, NaN/false, reset/terminal close và stage diagnostics. Preview cutover hoàn toàn, actual windows normal/manual-eye/blur/dark/profile đã xem; unknown hiển thị N/A, không Alert hoặc ratio cap.
+- Working validation nhận subject51 partial coverage/error rows, giữ acquisition completeness strict. Builder stream1024 rows, join label tại storage, fullEOF/release/source before+after hashes; unique stages và metadata-last marker. Resume check SHA/schema/footer/fingerprint/source/artifacts/dependencies/CFR, không file-existence shortcut hoặc multi-writer guarantee.
+- Native CLI `--video-id 04_0 --video-id 04_5 --video-id 04_10`:3 completed EOF outputs12291/12149/12315 rows (36,755 total), actual Arrow/time/null/label/hash round-trip verified; rerun3/3 cached. Reports `runs/phase7/full_three_clips/`, `resume/`; chưa chạy all34. Native15FPS blank15frame EOF giữ15 null rows; same5 saved packets qua independent native sessions tương đương1e-6.
+- Reproduced/fixed Windows read-only fsync EBADF (`r+b` writable flush), duplicate JSON-text policy comparison rejecting35 vs35.0, và native-close exception escaping preview source reporting. Covering regressions observed RED/GREEN; final `.venv/Scripts/python.exe -m pytest -q --tb=short`: **394 passed in12.01s**. Numerical review clean; raw/storage review clean sau scoped cleanup re-review.
+- Webcam Phase6/45s814 vàPhase7/45s806 emitted đều no-face, monotonic QPC và release; physical signs/occlusion/face transitions/disconnect vẫn chưa quan sát. Actual recorded9000ms profile bị quality gate; old416000ms MAR outlier thành no-face/null trong new sequential run, không suy pose-only cause hoặc mouth-open truth.
+- Coverage risk giữ nguyên và báo rõ:04_0 left-eye2767/12291, mouth2873/12291 valid dưới raw absolute pose policy; không claim đủ cho training/universal quality. Không tải thêm11 missing, mutate original manifest, split/calibrate/train, fake P1 baseline hoặc silentP0 fallback.
+
 ## Quyết định phạm vi — dùng dataset hiện tại
 
 - User chốt tiếp tục với **34 video/12subjects** hiện có; không đợi hoặc tự tải thêm11 file. Acquisition plan45/missing ledger và full-source gate được giữ, không đổi partial thành complete.
 - Roadmap8 xử lý working snapshot sau QC7; roadmap9/training/evaluation dùng restricted official membership và cardinality thực tế, không ép9/3/3 hoặc36/12/12. Freeze paths/hashes và version snapshot khi thêm nguồn.
 - Giữ subject51/Low Vigilance trong provenance/coverage. Thiếu Alert khiến P1 abstain và fold5 P1 validation/test blocked/undefined; không fake baseline hoặc silent P0 fallback. Không đổi calibration config/checkpoint mode.
 - Đây là đổi phạm vi tài liệu cho các phase tiếp theo, không training/splits implementation mới và không claim full benchmark. Phase3/hardware verification giữ kết quả đã báo.
+
+
+## 2026-10-06 — Phase4 EAR và Phase5 MAR
+
+- Thêm stateless `EyeFeatureExtractor(epsilon)`/`MouthFeatureExtractor(epsilon)` và79 deterministic regressions; dùng đúng anatomical/inner-lip topology, pixelXY, complete-denominator epsilon, independent eye validity và mean, NaN/false vs valid0. Shared contracts/schema/config không đổi; không clamp ratios.
+- Preview gọi geometry cả headless/no-face, dùng canonical topology thay duplicate eye IDs; thêm EAR/MAR/N/A và valid-only finite/null summaries. Detect latency giữ nguyên; sửa text scaling sau actual640px window cho thấy chữ HD quá nhỏ, đã xem landscape/portrait after-fix. Mặc định không lưu ảnh.
+- Red-before: hai targeted suites fail đúng missing modules. Green:41 EAR/38 MAR; final `.venv/Scripts/python.exe -m pytest -q --tb=short` **178 passed in6.96s**. LSP feature/preview diagnostics không có issues; read-only geometry/preview reviews đều pass, không actionable findings.
+- Ba clip subject04 prefix12s:723 face/geometry-valid frames, release; recorded eyes mở0ms EAR mean0.329221 → nhắm6280ms0.022919. Sequential20FPS mouth QC đến585400ms/11709 frames: MAR0.005320 →0.081579, raw lips khép/hé mở đã xem. Evidence ở `runs/phase4/` và `runs/phase5/mouth_sequence/`.
+- Native blank/full15FPS synthetic EOF:15 no-face, không upsample, NaN/masks→N/A/null, release. Webcam45s:1326 decoded/821 emitted/505 dropped, tất cả821 no-face và null aggregates; no webcam images.
+- Discovery5FPS decode đủ3 subject04 clips để tìm transition; high MAR khi quay đầu không là mouth-open/quality proof. Nói chuyện có xác nhận, human webcam transitions và physical camera disconnect vẫn chưa quan sát; không claim nghiệm thu hardware đầy đủ.
+- Dataset working34/12 và acquisition45/missing11/provenance giữ nguyên; không download thêm, không pose/calibration/temporal classification/feature builder/training/realtime UI.
 
 
 ## 2026-10-06 — Phase 3

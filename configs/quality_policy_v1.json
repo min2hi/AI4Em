@@ -1,0 +1,885 @@
+{
+  "report_version": "quality_frozen_v1",
+  "quality": {
+    "policy_version": "raw_quality_v1",
+    "reference_max_side": 256,
+    "min_blur_variance": 13.360166386014836,
+    "brightness_min": 84.22290370475113,
+    "brightness_max": 183.22616872479838,
+    "min_eye_width_ratio": 0.16472315499592688,
+    "max_abs_yaw_deg": 35.0,
+    "max_abs_pitch_deg": 25.0,
+    "eyes_occluded": false
+  },
+  "accepted_at_utc": "2026-10-07",
+  "decision": "Accepted development optical envelope from 12 explicitly visually reviewed frames; all36 derived negative controls rejected. Not universal or class-tuned calibration.",
+  "proposal_sha256": "56ad57dc4e43d93b7ce29c7fb898d7c00f34d595f6bad8dacef03aee0a6a5e4f",
+  "measurements_sha256": "6b88f2d263b8cfd6edffb23fcc3957cc5395946ac6c89122d4660437aea929e1",
+  "provenance": {
+    "report_version": "quality_measurements_v1",
+    "program": "scripts.measure_quality",
+    "program_version": "raw_quality_v1",
+    "created_at_utc": "2026-10-07T01:21:01.088940+00:00",
+    "program_sha256": "4b98dedfbde11aa735bcbbc581f1cf861757f3797212b54c94e85476c9ebd6b3",
+    "metric_program_sha256": "5f0386a77d7bf428da9d12f0561b9bdd5e8ff8c2d3d1e9b88cc2593bb408dd9b",
+    "versions": {
+      "mediapipe": "1.0.1",
+      "opencv-contrib-python": "5.0.0.93",
+      "numpy": "2.5.3"
+    },
+    "asset_sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "landmark_target_fps": 20,
+    "detector_config": {
+      "landmarker_mode": "VIDEO",
+      "num_faces": 1,
+      "min_face_detection_confidence": 0.5,
+      "min_face_presence_confidence": 0.5,
+      "min_tracking_confidence": 0.5
+    },
+    "requested_window_ms": {
+      "start": 0,
+      "end": 12000,
+      "bounds": "inclusive"
+    },
+    "constant_fps_verified_by_caller": false,
+    "roi": {
+      "landmark_ids": [
+        234,
+        454,
+        10,
+        152
+      ],
+      "pixel_bounds": "floor-min/ceil-max half-open",
+      "reference_max_side": 256,
+      "interpolation": "INTER_AREA",
+      "laplacian_depth": "CV_64F"
+    },
+    "proposal_status": "proposed",
+    "proposal_error": null,
+    "notes": [
+      "No faces/images or feature Parquet are saved.",
+      "Controls reuse original landmarks and are optical diagnostic negatives, not physiological labels.",
+      "Window diagnostics do not validate a whole file unless reader reached actual EOF.",
+      "Annotation note is a visual-review attestation; source labels are neither read nor used."
+    ],
+    "annotation_provenance": {
+      "path": "D:\\code\\MachineLearning\\mid-term\\runs\\phase7\\quality_annotations.json",
+      "sha256": "e29145d1a4f86571e579d6af04e0ea84b9e54c6daa3fa0600519b9145b266f72"
+    }
+  },
+  "sources": [
+    {
+      "video_id": "04_0",
+      "path": "D:\\code\\MachineLearning\\mid-term\\data\\raw\\uta_rldd\\04\\0.mp4",
+      "status": "bounded_window",
+      "error": null,
+      "source_sha256": "d728c25cdc3c3b8eaa5df519e528a74f53bfeed52e063e2bfc9ed8de3954d9b3",
+      "source_size_bytes": 63598959,
+      "reader": {
+        "decoded_frames": 301,
+        "emitted_frames": 241,
+        "dropped_frames": 60,
+        "timestamp_method": "CAP_PROP_POS_MSEC",
+        "duration_s": 614.56,
+        "fps_reported": 25.0,
+        "wall_seconds": 12.146659,
+        "status": "STOPPED",
+        "error": null,
+        "capture_released": true
+      },
+      "detector": {
+        "inference_frames": 241,
+        "face_frames": 241,
+        "no_face_frames": 0,
+        "invalid_landmark_frames": 0,
+        "inference_seconds": 1.910729199987145,
+        "closed": true
+      },
+      "complete_source_validation": false
+    },
+    {
+      "video_id": "04_5",
+      "path": "D:\\code\\MachineLearning\\mid-term\\data\\raw\\uta_rldd\\04\\5.mp4",
+      "status": "bounded_window",
+      "error": null,
+      "source_sha256": "44d2ab36fd2aef37be41e31eb3bed014f6ae188905346372076f4766c99b1010",
+      "source_size_bytes": 698932216,
+      "reader": {
+        "decoded_frames": 361,
+        "emitted_frames": 241,
+        "dropped_frames": 120,
+        "timestamp_method": "CAP_PROP_POS_MSEC",
+        "duration_s": 607.4666666666667,
+        "fps_reported": 30.0,
+        "wall_seconds": 35.25771059999988,
+        "status": "STOPPED",
+        "error": null,
+        "capture_released": true
+      },
+      "detector": {
+        "inference_frames": 241,
+        "face_frames": 241,
+        "no_face_frames": 0,
+        "invalid_landmark_frames": 0,
+        "inference_seconds": 2.162474800009477,
+        "closed": true
+      },
+      "complete_source_validation": false
+    },
+    {
+      "video_id": "04_10",
+      "path": "D:\\code\\MachineLearning\\mid-term\\data\\raw\\uta_rldd\\04\\10.mp4",
+      "status": "bounded_window",
+      "error": null,
+      "source_sha256": "5a15ca6b92c24749c1bb9f49c01ca81060150b0c396cf20f2a02717434fc6774",
+      "source_size_bytes": 63024482,
+      "reader": {
+        "decoded_frames": 301,
+        "emitted_frames": 241,
+        "dropped_frames": 60,
+        "timestamp_method": "CAP_PROP_POS_MSEC",
+        "duration_s": 615.76,
+        "fps_reported": 25.0,
+        "wall_seconds": 13.323342099999536,
+        "status": "STOPPED",
+        "error": null,
+        "capture_released": true
+      },
+      "detector": {
+        "inference_frames": 241,
+        "face_frames": 241,
+        "no_face_frames": 0,
+        "invalid_landmark_frames": 0,
+        "inference_seconds": 2.1245458999965194,
+        "closed": true
+      },
+      "complete_source_validation": false
+    }
+  ],
+  "evidence": {
+    "clean": [
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 0,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 161.45839146205358,
+          "blur_variance": 44.365263840373686,
+          "left_eye_width_ratio": 0.19884076388292438,
+          "right_eye_width_ratio": 0.20008421351433273
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 3000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 158.00526184360731,
+          "blur_variance": 47.66582679155981,
+          "left_eye_width_ratio": 0.19688168724448224,
+          "right_eye_width_ratio": 0.19796527235290592
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 6000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 158.17518472906403,
+          "blur_variance": 38.10880912290699,
+          "left_eye_width_ratio": 0.18011184958546217,
+          "right_eye_width_ratio": 0.21790405151035544
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 9000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 145.08857281698565,
+          "blur_variance": 38.00883674337757,
+          "left_eye_width_ratio": 0.18728971414646817,
+          "right_eye_width_ratio": 0.22724662630866332
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 12000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 128.11970527251185,
+          "blur_variance": 33.64737889798878,
+          "left_eye_width_ratio": 0.1906231276470911,
+          "right_eye_width_ratio": 0.21561363227954894
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 0,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 183.22616872479838,
+          "blur_variance": 36.84893328441417,
+          "left_eye_width_ratio": 0.20271890985820223,
+          "right_eye_width_ratio": 0.19783427296852035
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 3000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 176.9937200956938,
+          "blur_variance": 32.126897792196544,
+          "left_eye_width_ratio": 0.20253114088039925,
+          "right_eye_width_ratio": 0.16472315499592688
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 0,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 84.22290370475113,
+          "blur_variance": 13.360166386014836,
+          "left_eye_width_ratio": 0.19956599835628058,
+          "right_eye_width_ratio": 0.18886617176713832
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 3000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 88.79607514880952,
+          "blur_variance": 23.06887129387888,
+          "left_eye_width_ratio": 0.2023078687600093,
+          "right_eye_width_ratio": 0.1924157110235667
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 6000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 91.44592633928572,
+          "blur_variance": 23.210902123137664,
+          "left_eye_width_ratio": 0.20271892564029076,
+          "right_eye_width_ratio": 0.19476337935759602
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 9000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 89.12798059834124,
+          "blur_variance": 19.850568646993285,
+          "left_eye_width_ratio": 0.20590429439835214,
+          "right_eye_width_ratio": 0.18887355537166858
+        },
+        "retained": true
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 12000,
+        "quality": "clean",
+        "note": "Visually inspected exact source frame in quality_visual_review.png: face/eyes unobstructed, usable illumination/detail; closed eyelids are not an optical defect. No physiological/class-label annotation.",
+        "metrics": {
+          "brightness": 92.27436755952381,
+          "blur_variance": 19.653973014987244,
+          "left_eye_width_ratio": 0.20288553591638941,
+          "right_eye_width_ratio": 0.1823629090119177
+        },
+        "retained": true
+      }
+    ],
+    "reject": [],
+    "controls": [
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 0,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19884076388292438,
+          "right_eye_width_ratio": 0.20008421351433273
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 0,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19884076388292438,
+          "right_eye_width_ratio": 0.20008421351433273
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 0,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 158.15422712053572,
+          "blur_variance": 1.6830289594981136,
+          "left_eye_width_ratio": 0.19884076388292438,
+          "right_eye_width_ratio": 0.20008421351433273
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 3000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19688168724448224,
+          "right_eye_width_ratio": 0.19796527235290592
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 3000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19688168724448224,
+          "right_eye_width_ratio": 0.19796527235290592
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 3000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 155.04516267123287,
+          "blur_variance": 1.6802047351211915,
+          "left_eye_width_ratio": 0.19688168724448224,
+          "right_eye_width_ratio": 0.19796527235290592
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 6000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.18011184958546217,
+          "right_eye_width_ratio": 0.21790405151035544
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 6000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.18011184958546217,
+          "right_eye_width_ratio": 0.21790405151035544
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 6000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 153.54129464285714,
+          "blur_variance": 1.5580289541189567,
+          "left_eye_width_ratio": 0.18011184958546217,
+          "right_eye_width_ratio": 0.21790405151035544
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 9000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.18728971414646817,
+          "right_eye_width_ratio": 0.22724662630866332
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 9000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.18728971414646817,
+          "right_eye_width_ratio": 0.22724662630866332
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 9000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 143.24000074760767,
+          "blur_variance": 1.4029889640232593,
+          "left_eye_width_ratio": 0.18728971414646817,
+          "right_eye_width_ratio": 0.22724662630866332
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 12000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.1906231276470911,
+          "right_eye_width_ratio": 0.21561363227954894
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 12000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.1906231276470911,
+          "right_eye_width_ratio": 0.21561363227954894
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_0",
+        "timestamp_ms": 12000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 129.10787544431278,
+          "blur_variance": 1.4446412585997868,
+          "left_eye_width_ratio": 0.1906231276470911,
+          "right_eye_width_ratio": 0.21561363227954894
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 0,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20271890985820223,
+          "right_eye_width_ratio": 0.19783427296852035
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 0,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20271890985820223,
+          "right_eye_width_ratio": 0.19783427296852035
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 0,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 40.0
+        },
+        "metrics": {
+          "brightness": 172.22640498991936,
+          "blur_variance": 1.8362510750122547,
+          "left_eye_width_ratio": 0.20271890985820223,
+          "right_eye_width_ratio": 0.19783427296852035
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 3000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20253114088039925,
+          "right_eye_width_ratio": 0.16472315499592688
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 3000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20253114088039925,
+          "right_eye_width_ratio": 0.16472315499592688
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_5",
+        "timestamp_ms": 3000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 40.0
+        },
+        "metrics": {
+          "brightness": 160.16922099282297,
+          "blur_variance": 1.8890752116636231,
+          "left_eye_width_ratio": 0.20253114088039925,
+          "right_eye_width_ratio": 0.16472315499592688
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 0,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19956599835628058,
+          "right_eye_width_ratio": 0.18886617176713832
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 0,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.19956599835628058,
+          "right_eye_width_ratio": 0.18886617176713832
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 0,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 88.15458851809954,
+          "blur_variance": 1.6013386677700823,
+          "left_eye_width_ratio": 0.19956599835628058,
+          "right_eye_width_ratio": 0.18886617176713832
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 3000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.2023078687600093,
+          "right_eye_width_ratio": 0.1924157110235667
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 3000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.2023078687600093,
+          "right_eye_width_ratio": 0.1924157110235667
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 3000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 92.74151785714285,
+          "blur_variance": 1.7201950768710808,
+          "left_eye_width_ratio": 0.2023078687600093,
+          "right_eye_width_ratio": 0.1924157110235667
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 6000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20271892564029076,
+          "right_eye_width_ratio": 0.19476337935759602
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 6000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20271892564029076,
+          "right_eye_width_ratio": 0.19476337935759602
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 6000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 95.50470610119048,
+          "blur_variance": 1.7186964994331069,
+          "left_eye_width_ratio": 0.20271892564029076,
+          "right_eye_width_ratio": 0.19476337935759602
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 9000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20590429439835214,
+          "right_eye_width_ratio": 0.18887355537166858
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 9000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20590429439835214,
+          "right_eye_width_ratio": 0.18887355537166858
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 9000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 93.20697571090048,
+          "blur_variance": 1.6710776330775614,
+          "left_eye_width_ratio": 0.20590429439835214,
+          "right_eye_width_ratio": 0.18887355537166858
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 12000,
+        "kind": "dark",
+        "parameters": {
+          "uniform_intensity": 0
+        },
+        "metrics": {
+          "brightness": 0.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20288553591638941,
+          "right_eye_width_ratio": 0.1823629090119177
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 12000,
+        "kind": "overexposed",
+        "parameters": {
+          "uniform_intensity": 255
+        },
+        "metrics": {
+          "brightness": 255.0,
+          "blur_variance": 0.0,
+          "left_eye_width_ratio": 0.20288553591638941,
+          "right_eye_width_ratio": 0.1823629090119177
+        },
+        "retained": false
+      },
+      {
+        "video_id": "04_10",
+        "timestamp_ms": 12000,
+        "kind": "gaussian_blur",
+        "parameters": {
+          "sigma_source_pixels": 26.5
+        },
+        "metrics": {
+          "brightness": 96.14737723214286,
+          "blur_variance": 1.692867749964569,
+          "left_eye_width_ratio": 0.20288553591638941,
+          "right_eye_width_ratio": 0.1823629090119177
+        },
+        "retained": false
+      }
+    ]
+  },
+  "optical_only_window_coverage": [
+    {
+      "video_id": "04_0",
+      "observed_rows": 241,
+      "optical_envelope_retained_rows": 238
+    },
+    {
+      "video_id": "04_5",
+      "observed_rows": 241,
+      "optical_envelope_retained_rows": 121
+    },
+    {
+      "video_id": "04_10",
+      "observed_rows": 241,
+      "optical_envelope_retained_rows": 230
+    }
+  ],
+  "notes": [
+    "Full measurement/proposal reports remain in runs/phase7/quality_measurements.",
+    "No per-frame physiological truth was inferred from weak video labels.",
+    "Source04_5@6000/9000/12000 profile frames were not accepted clean optical annotations.",
+    "Physical live sign/occlusion/face-transition/disconnect remain unobserved: camera45s had814 no-face samples."
+  ]
+}

@@ -14,10 +14,10 @@ import cv2
 import numpy as np
 
 from src.config import PROJECT_ROOT, load_config
-from src.contracts import EyeFeatures, LandmarkResult, MouthFeatures
-from src.features.landmarks import FaceLandmarkDetector
-from src.features.eye import LEFT_EYE, RIGHT_EYE, EyeFeatureExtractor
-from src.features.mouth import MOUTH_HORIZONTAL, MOUTH_VERTICAL, MouthFeatureExtractor
+from src.contracts import EyeFeatures, LandmarkResult, MouthFeatures, PoseFeatures
+from src.features.eye import LEFT_EYE, RIGHT_EYE
+from src.features.mouth import MOUTH_HORIZONTAL, MOUTH_VERTICAL
+from src.features.pipeline import FeaturePipeline
 from src.preprocessing.video_reader import VideoReader
 
 
@@ -25,7 +25,9 @@ WINDOW_TITLE = "Facial geometry - unmirrored (q/Esc: stop)"
 
 
 def draw_overlay(image_bgr: np.ndarray, result: LandmarkResult, *,
-                 eyes: EyeFeatures | None = None, mouth: MouthFeatures | None = None) -> np.ndarray:
+                 eyes: EyeFeatures | None = None, mouth: MouthFeatures | None = None,
+                 pose: PoseFeatures | None = None, pose_approximate: bool = False,
+                 quality_reasons: tuple[str, ...] = ()) -> np.ndarray:
     """Own the preview copy; never mirror or modify the inference image."""
     image = image_bgr.copy()
     width, height = result.image_size
@@ -50,6 +52,13 @@ def draw_overlay(image_bgr: np.ndarray, result: LandmarkResult, *,
         rows.append(f"EAR L:{left} R:{right} mean:{mean}")
     if mouth is not None:
         rows.append(f"MAR:{format_measurement(mouth.mar, mouth.mouth_valid)}")
+    if pose is not None:
+        mode = "approx" if pose_approximate else "calibrated"
+        values = " ".join(f"{name}:{format_measurement(value, pose.pose_valid)}"
+                          for name, value in zip(("P", "Y", "R"), (pose.pitch, pose.yaw, pose.roll)))
+        rows.append(f"POSE {mode} {values}")
+    if quality_reasons:
+        rows.extend("QUALITY: " + reason for reason in quality_reasons)
     # HighGUI fits either orientation inside 640 px; keep labels readable there.
     text_scale = max(1.0, max(width, height) / 640)
     for index, text in enumerate(rows):
@@ -88,7 +97,7 @@ def export_geometry_summary(summary: dict) -> dict:
 
 def run_source(source: Path | int, config: dict, args: argparse.Namespace, index: int) -> dict:
     reader = VideoReader()
-    detector = None
+    pipeline = None
     camera = isinstance(source, int)
     report = {"source": str(source), "kind": "camera" if camera else "video",
               "status": "running", "error": None, "overlay": None,
@@ -96,13 +105,12 @@ def run_source(source: Path | int, config: dict, args: argparse.Namespace, index
     times = []
     first_timestamp = None
     last_timestamp = None
-    summaries = {name: new_geometry_summary() for name in ("ear_left", "ear_right", "ear_mean", "mar")}
+    summaries = {name: new_geometry_summary() for name in
+                 ("ear_left", "ear_right", "ear_mean", "mar", "pitch", "yaw", "roll", "reprojection_error_norm")}
     started = time.perf_counter()
     frames = None
     try:
-        eye_extractor = EyeFeatureExtractor(config["epsilon"])
-        mouth_extractor = MouthFeatureExtractor(config["epsilon"])
-        detector = FaceLandmarkDetector(config)
+        pipeline = FeaturePipeline(config)
         frames = (reader.iter_camera(source, config["landmark_target_fps"],
                                      width=args.camera_width, height=args.camera_height)
                   if camera else reader.iter_frames(source, config["landmark_target_fps"],
@@ -116,18 +124,31 @@ def run_source(source: Path | int, config: dict, args: argparse.Namespace, index
                     height, width = packet.image_bgr.shape[:2]
                     scale = min(640 / width, 640 / height)
                     cv2.resizeWindow(WINDOW_TITLE, round(width * scale), round(height * scale))
-            before = time.perf_counter()
-            result = detector.detect(packet)
-            times.append((time.perf_counter() - before) * 1000)
-            eyes = eye_extractor.extract(result)
-            mouth = mouth_extractor.extract(result)
+            before_detect = pipeline.stats["timings_ms"]["detect"]["total_ms"]
+            sample = pipeline.process(packet)
+            times.append(pipeline.stats["timings_ms"]["detect"]["total_ms"] - before_detect)
+            result = pipeline.last_landmarks
+            quality = pipeline.last_quality
+            eyes = EyeFeatures(sample.ear_left, sample.ear_right, sample.ear_mean,
+                               sample.left_eye_valid, sample.right_eye_valid)
+            mouth = MouthFeatures(sample.mar, sample.mouth_valid)
+            pose = PoseFeatures(sample.pitch, sample.yaw, sample.roll, sample.pose_valid,
+                                sample.reprojection_error_norm)
+            report["camera_model"] = pipeline.pose_estimator.camera_metadata(result.image_size)
+            report["last_quality"] = {"reasons": quality.reasons, "metrics": dict(quality.metrics)}
+            for name in ("pitch", "yaw", "roll"):
+                update_geometry_summary(summaries[name], getattr(pose, name), pose.pose_valid)
+            update_geometry_summary(summaries["reprojection_error_norm"], pose.reprojection_error_norm,
+                                    math.isfinite(pose.reprojection_error_norm))
             update_geometry_summary(summaries["ear_left"], eyes.ear_left, eyes.left_eye_valid)
             update_geometry_summary(summaries["ear_right"], eyes.ear_right, eyes.right_eye_valid)
             update_geometry_summary(summaries["ear_mean"], eyes.ear_mean, eyes.left_eye_valid and eyes.right_eye_valid)
             update_geometry_summary(summaries["mar"], mouth.mar, mouth.mouth_valid)
             last_timestamp = packet.timestamp_ms
             if not args.headless or (args.save_overlay and report["overlay"] is None and result.face_detected):
-                overlay = draw_overlay(packet.image_bgr, result, eyes=eyes, mouth=mouth)
+                overlay = draw_overlay(packet.image_bgr, result, eyes=eyes, mouth=mouth,
+                                       pose=pose, pose_approximate=config["camera_model"]["mode"] == "approximate",
+                                       quality_reasons=quality.reasons)
                 if args.save_overlay and report["overlay"] is None and result.face_detected:
                     destination = args.report_dir / f"source_{index}_overlay.png"
                     if not cv2.imwrite(str(destination), overlay):
@@ -150,15 +171,25 @@ def run_source(source: Path | int, config: dict, args: argparse.Namespace, index
         report["status"] = "error"
         report["error"] = f"{type(exc).__name__}: {exc}"
     finally:
-        if frames is not None:
-            frames.close()
-        reader.close()
-        if detector is not None:
-            detector.close()
-        if not args.headless:
-            cv2.destroyAllWindows()
+        # A failing closer must not skip other resources or subsequent sources.
+        cleanup = (("frames", frames.close if frames is not None else None),
+                   ("reader", reader.close),
+                   ("pipeline", pipeline.close if pipeline is not None else None),
+                   ("windows", cv2.destroyAllWindows if not args.headless else None))
+        for resource, close in cleanup:
+            if close is None:
+                continue
+            try:
+                close()
+            except Exception as exc:
+                message = f"{resource} cleanup: {type(exc).__name__}: {exc}"
+                report["error"] = f"{report['error']}; {message}" if report["error"] else message
+                report["status"] = "error"
+                report["complete_source_validation"] = False
     wall = time.perf_counter() - started
-    report.update(reader=dict(reader.stats), detector=dict(detector.stats) if detector is not None else None,
+    report.update(reader=dict(reader.stats),
+                  detector=pipeline.stats["detector"] if pipeline is not None else None,
+                  pipeline=pipeline.stats if pipeline is not None else None,
                   wall_seconds=wall, processed_fps=len(times) / wall if wall > 0 else 0,
                   first_timestamp_ms=first_timestamp, last_timestamp_ms=last_timestamp,
                   inference_ms={"p50": float(np.percentile(times, 50)), "p95": float(np.percentile(times, 95))}
@@ -180,7 +211,7 @@ def main() -> int:
                         help="Caller asserts independent CFR verification; record explicit fallback if needed")
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--save-overlay", action="store_true", help="Opt-in face image; check publication permissions")
-    parser.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "runs/phase5")
+    parser.add_argument("--report-dir", type=Path, default=PROJECT_ROOT / "runs/phase7/preview")
     args = parser.parse_args()
     if args.seconds is not None and (not math.isfinite(args.seconds) or args.seconds <= 0):
         parser.error("--seconds must be finite and positive")
@@ -194,10 +225,15 @@ def main() -> int:
     with Path(config["asset_path"]).open("rb") as handle:
         asset_sha = hashlib.file_digest(handle, "sha256").hexdigest()
     sources = [path.resolve() for path in args.video] if args.video else [args.camera]
+    with Path(config["canonical_model_path"]).open("rb") as handle:
+        canonical_sha = hashlib.file_digest(handle, "sha256").hexdigest()
     records = [run_source(item, config, args, index) for index, item in enumerate(sources)]
-    report = {"created_at_utc": datetime.now(timezone.utc).isoformat(), "phase": 5,
+    report = {"created_at_utc": datetime.now(timezone.utc).isoformat(), "phase": 7,
               "versions": {name: metadata.version(name) for name in ("mediapipe", "opencv-contrib-python", "numpy")},
               "asset_sha256": asset_sha, "landmark_target_fps": config["landmark_target_fps"],
+              "canonical_sha256": canonical_sha,
+              "quality_policy_version": config["quality"]["policy_version"],
+              "quality_report_sha256": config["quality"]["frozen_report_sha256"],
               "constant_fps_verified_by_caller": args.constant_fps_verified,
               "requested_seconds": args.seconds, "sources": records,
               "notes": ["Bounded prefixes do not validate complete files or the full dataset.",

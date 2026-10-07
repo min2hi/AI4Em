@@ -1,6 +1,6 @@
 # 14 — Cấu trúc project và config
 
-Cây dưới mô tả đích cuối cùng. Phase 0–3 đã có config/contracts, acquisition, manifest, `preprocessing/video_reader.py`, `features/landmarks.py` và scripts tương ứng. Eye/mouth/pose/pipeline, training/realtime/UI còn lại là thiết kế, chưa được tạo; xem [báo cáo Phase 3](Phase3_Report.md).
+Cây dưới mô tả đích cuối cùng. Phase0–7 đã có config/contracts, acquisition/manifest, reader/detector/EAR/MAR/signed pose/quality/pipeline/builder và scripts tương ứng. Temporal/calibration/training/realtime/UI còn lại là thiết kế. Shared records/schema giữ nguyên. Phase7 mới xử lý3 selected originals để QC, chưa toàn snapshot34; xem roadmap và README cho hardware blockers/coverage.
 
 ```text
 project/
@@ -43,12 +43,25 @@ Parquet per video, dtype `float32` cho feature, bool cho validity, int64 timesta
 
 Raw row: `dataset_name, subject_id, video_id, frame_index, timestamp_ms, ear_left, ear_right, ear_mean, mar, pitch, yaw, roll, face_detected, left_eye_valid, right_eye_valid, mouth_valid, pose_valid, reprojection_error_norm, label_id, label_source`.
 
-Metadata companion `video_id.metadata.json`: schema version, source hash, asset/canonical hash, extraction config, actual sampling stats, failures. Với YawDD chưa annotate, label_id null; không điền lớp Drowsy chỉ vì video có ngáp. Derived Parquet versioned giữ normalized feature, event state và ordered feature names; sequence index trỏ vào mảng derived per video.
+Metadata companion `video_id.metadata.json`: schema/producer version, manifest row/membership provenance, source SHA/size, asset/canonical/frozen-quality hashes, effective config/camera K/distortion/approximate flag, dependencies/CFR policy, extraction fingerprint, actual reader/model/stage stats, rows/time/validity/reasons và Parquet SHA256. Nhãn chỉ join ở builder; `source_id` nằm trong sample/metadata, không thêm cột storage trùng video_id. Unknown measurements thành Arrow null, không stringNaN hoặc false0. Future YawDD unknown label_id vẫn nullable, chưa có adapter hoặc download.
+
+### Publication và resume — Phase7
+Một writer sequential, tối đa1024 scalar rows/batch. Chỉ publish sau reader EOF/released, writer/native close thành công và source SHA/size vẫn khớp. Stage unique cùng filesystem; sync Parquet bằng writable handle (`r+b` trên Windows), sync metadata, replace Parquet trước rồi replace metadata **cuối cùng như commit marker**. Hai replaces không phải filesystem transaction. Interruption giữa chúng làm pair thiếu/mismatched và không cache được.
+
+Resume/consumers phải check cả pair, complete-source flag + EOF/release, signature/source/manifest/artifact/dependency/CFR agreement, actual Parquet SHA, exact Arrow schema và footer row_count. File existence/config hash riêng không đủ. Stale old bytes được giữ nếu recompute fail nhưng report `output_current=false`; không công nhận current success. Không nhiều builder/process ghi đồng thời cùng output directory. CLI bắt buộc explicit repeated video IDs hoặc `--all-working-snapshot`; Phase7 chỉ QC04_0/04_5/04_10, không sửa manifest/full-acquisition gate.
+
+### Frozen working snapshot và audit — Phase8
+`scripts/process_snapshot.py` freeze manifest/YAML byte-for-byte và resolved builder signature, original source rows/paths/hashes, extraction-program hashes, dependencies và acquisition missing IDs dưới `<run-dir>/snapshot/`. `snapshot_sha256` nhận diện cả snapshot; input/code/asset drift phải dùng run-dir mới, không silently rewrite freeze. Runner gọi builder sequential với một selected ID nhưng **full frozen manifest**, checkpoint report sau từng member; pending không là complete. Completed/cached results phải có frozen fingerprint và current commit pair.
+
+`scripts/audit_features.py` reopen từng pair và stream toàn rows để kiểm exact schema, source/label identity, time/index ordering qua batch boundaries, first source frame0, finite/null/masks/mean/angle bounds, counts và release. Coverage theo video/subject/class là sum(valid rows)/sum(audited emitted rows), không mean(video ratios) hoặc duration-weighted coverage. Failed members được giữ với explicit reason/support; zero denominator là null. Các quality reasons chồng lấp.
+
+`data/processed/extraction_status.parquet` là status manifest riêng, chứa frozen source fields/status cùng extraction/audit status và snapshot/source/fingerprint provenance. Giữ nguyên bytes của `manifest.parquet`: `status=ok/error` chứng minh acquisition/source verification, không chứng minh feature quality. Raw feature schema và metadata-last publication không đổi; sidecar không phải calibrated sequences hoặc train/validation/test split.
+
 
 ## Config — một nơi cho mỗi giá trị
 YAML đọc bằng `safe_load`; validate ngay startup: FPS dương, window*FPS nguyên, stride≤window, threshold range đúng, paths tồn tại; schema/checkpoint mismatch báo lỗi. Runtime paths resolve từ project root hoặc config root thống nhất, không phụ thuộc shell cwd.
 
-Ví dụ đoạn config; bản chạy hiện tại nằm trong `configs/`. Các gate blur/brightness và split path chỉ thêm ở phase cần dùng, không có placeholder giả chạy:
+Ví dụ đoạn config; bản chạy nằm trong `configs/`. Phase7 đã thêm `camera_model` và optical `quality` thực đo/freeze; accepted evidence là `configs/quality_policy_v1.json`, nested path/SHA được kiểm tra startup. Không universal blur defaults hoặc null placeholder. Current defaults approximate camera; calibrated block cần reference_size/matrix/distortion hữu hạn và đúng shape.
 ```yaml
 # preprocessing.yaml
 landmark_target_fps: 20

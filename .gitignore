@@ -4,10 +4,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/
-data/raw/
-data/processed/
-data/acquisition/
-data/private/
+# Never publish datasets, manifests, derived features or acquisition receipts
+data/
 runs/
 models/assets/*.task
 models/assets/*.obj
@@ -15,3 +13,25 @@ models/checkpoints/
 *.part
 *.partial
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dataset media, archives and generated model weights (including accidental copies)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.parquet
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.joblib

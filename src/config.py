@@ -7,6 +7,9 @@ from typing import Any
 
 import yaml
 
+from src.features.head_pose import validate_camera_model
+from src.features.quality import validate_quality_config
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PATH_KEYS = {"asset_path", "canonical_model_path", "dataset_root", "output_dir", "manifest_path", "model_path"}
 POSITIVE_KEYS = {
@@ -47,6 +50,12 @@ def validate_config(config: dict[str, Any], *, model_metadata: dict[str, Any] | 
             raise ValueError(f"{key} must be positive")
         if key in RATIO_KEYS and not 0 <= value <= 1:
             raise ValueError(f"{key} must be between 0 and 1")
+    if "max_reprojection_error_norm" in config and config["max_reprojection_error_norm"] > 1:
+        raise ValueError("max_reprojection_error_norm cannot exceed one")
+    if "camera_model" in config:
+        validate_camera_model(config["camera_model"])
+    if "quality" in config:
+        validate_quality_config(config["quality"])
     for enter, exit_, direction in [
         ("blink_enter", "blink_exit", -1), ("yawn_enter", "yawn_exit", 1),
         ("low_enter", "low_exit", 1), ("drowsy_enter", "drowsy_exit", 1),
@@ -89,10 +98,17 @@ def load_config(path: str | Path, *, project_root: str | Path | None = None) -> 
         raise ValueError(f"Invalid YAML in {path}: {exc}") from exc
     if not isinstance(config, dict):
         raise ValueError("Config must be a YAML mapping")
-    validate_config(config)
     for key in PATH_KEYS & config.keys():
         if not isinstance(config[key], str) or not config[key].strip():
             raise ValueError(f"{key} must be a path string")
         value = Path(config[key])
         config[key] = value.resolve() if value.is_absolute() else (root / value).resolve()
+    quality = config.get("quality")
+    if isinstance(quality, dict) and "frozen_report_path" in quality:
+        value = quality["frozen_report_path"]
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("quality.frozen_report_path must be a path string")
+        value = Path(value)
+        quality["frozen_report_path"] = value.resolve() if value.is_absolute() else (root / value).resolve()
+    validate_config(config)
     return config

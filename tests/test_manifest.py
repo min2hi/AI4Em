@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.datasets.manifest import build_manifest, validate_manifest
+from src.datasets.manifest import build_manifest, validate_manifest, validate_working_manifest
 
 
 @pytest.fixture
@@ -107,3 +107,52 @@ def test_exploration_rejects_verified_receipt_from_different_source(video_datase
     report = json.loads((report_dir / "exploration_report.json").read_text())
     assert result.returncode == 1
     assert report["errors"] == []
+
+
+@pytest.fixture
+def working_manifest(video_dataset):
+    frame, _ = build_manifest(video_dataset, "uta_rldd")
+    frame["fold_id"] = pd.array([1] * len(frame), dtype="Int8")
+    frame["fold_source"] = "official_archive_index"
+    extra = frame.loc[frame["source_label"] == 5].copy()
+    extra["subject_id"] = "51"
+    extra["video_id"] = "51_5"
+    extra["relative_path"] = "51/5.avi"
+    extra["fold_id"] = 5
+    return pd.concat([frame, extra], ignore_index=True)
+
+
+def test_working_snapshot_allows_partial_subject_without_relaxing_acquisition(working_manifest):
+    validate_working_manifest(working_manifest)
+    with pytest.raises(ValueError):
+        validate_manifest(working_manifest, require_folds=True)
+
+
+def test_working_snapshot_retains_identifiable_error_row(working_manifest):
+    frame = working_manifest.copy()
+    frame.loc[3, ["status", "error", "sampled_decode_ok"]] = ["error", "Cannot decode", False]
+    frame.loc[3, "sha256"] = None
+    validate_working_manifest(frame)
+
+
+@pytest.mark.parametrize(("column", "value"), [
+    ("video_id", "../51_5"), ("subject_id", "1"), ("relative_path", "../51/5.avi"),
+    ("relative_path", "51/0.avi"), ("label_id", 2), ("fold_id", 6),
+    ("fold_source", "guessed"), ("sha256", "not-a-digest"), ("width", 0),
+    ("fps_reported", float("nan")), ("sampled_decode_ok", False),
+    ("status", "unknown"), ("dataset_name", "other"),
+])
+def test_working_snapshot_rejects_ambiguous_or_invalid_rows(working_manifest, column, value):
+    frame = working_manifest.copy()
+    frame.loc[3, column] = value
+    with pytest.raises(ValueError):
+        validate_working_manifest(frame)
+
+
+def test_working_snapshot_rejects_duplicate_keys_and_subject_fold_conflict(working_manifest):
+    with pytest.raises(ValueError):
+        validate_working_manifest(pd.concat([working_manifest, working_manifest.iloc[:1]]))
+    frame = working_manifest.copy()
+    frame.loc[0, "fold_id"] = 2
+    with pytest.raises(ValueError):
+        validate_working_manifest(frame)

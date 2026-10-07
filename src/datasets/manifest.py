@@ -147,3 +147,68 @@ def validate_manifest(frame: pd.DataFrame, *, expected_subjects: int | None = No
         actual = {row["relative_path"]: tuple(row[key] for key in keys) for row in frame.to_dict("records")}
         if len(expected) != len(expected_records) or actual != expected:
             raise ValueError("Manifest identities/provenance differ from acquisition plan")
+
+
+def validate_working_manifest(frame: pd.DataFrame) -> None:
+    """Validate an identifiable working snapshot, not acquisition completeness.
+
+    Failed source rows are retained for reporting, but cannot relax identities,
+    labels or official subject fold consistency.
+    """
+    missing = set(MANIFEST_COLUMNS) - set(frame.columns)
+    if missing or frame.empty:
+        raise ValueError(f"Missing manifest columns or empty snapshot: {sorted(missing)}")
+    for key in ("relative_path", "video_id"):
+        if frame[key].isna().any() or frame[key].duplicated().any():
+            raise ValueError(f"Duplicate or missing {key}")
+    for row in frame.to_dict("records"):
+        subject, video, relative = row["subject_id"], row["video_id"], row["relative_path"]
+        if not isinstance(row["dataset_name"], str) or row["dataset_name"] != "uta_rldd" or not isinstance(subject, str) or not re.fullmatch(r"[0-9]{2}", subject):
+            raise ValueError("Invalid dataset or two-digit UTA subject identity")
+        match = re.fullmatch(r"([0-9]{2})_(0|5|10)(?:_([1-9][0-9]*))?", video) if isinstance(video, str) else None
+        if match is None or match.group(1) != subject:
+            raise ValueError("Unsafe or inconsistent UTA video identity")
+        label = int(match.group(2))
+        if (pd.isna(row["source_label"]) or isinstance(row["source_label"], bool)
+                or row["source_label"] != label or pd.isna(row["label_id"])
+                or isinstance(row["label_id"], bool) or row["label_id"] != SOURCE_LABELS[label]):
+            raise ValueError("Source/internal label mismatch")
+        stem = video[len(subject) + 1:]
+        if (not isinstance(relative, str) or "\\" in relative
+                or not re.fullmatch(re.escape(subject + "/" + stem) + r"\.[a-zA-Z0-9]+", relative)
+                or Path(relative).suffix.lower() not in VIDEO_SUFFIXES):
+            raise ValueError("Unsafe or inconsistent relative source identity")
+        part = row["part_id"]
+        if (match.group(3) is None and not pd.isna(part)) or (match.group(3) is not None and str(part) != match.group(3)):
+            raise ValueError("Part identity mismatch")
+        if not isinstance(row["label_source"], str) or row["label_source"] != "video_weak":
+            raise ValueError("Invalid UTA label provenance")
+        fold = row["fold_id"]
+        if not pd.isna(fold) and (isinstance(fold, bool) or fold not in (1, 2, 3, 4, 5)):
+            raise ValueError("Invalid official fold")
+        if not pd.isna(fold) and (not isinstance(row["fold_source"], str) or row["fold_source"] != "official_archive_index"):
+            raise ValueError("Known fold requires official provenance")
+        status = row["status"]
+        if not isinstance(status, str) or status not in ("ok", "error"):
+            raise ValueError("Unknown manifest status")
+        if status == "error":
+            if not isinstance(row["error"], str) or not row["error"].strip():
+                raise ValueError("Error row must retain a meaningful reason")
+            continue
+        if pd.isna(fold) or not isinstance(row["fold_source"], str) or row["fold_source"] != "official_archive_index":
+            raise ValueError("Missing official fold provenance")
+        if pd.isna(row["sampled_decode_ok"]) or row["sampled_decode_ok"] != True:
+            raise ValueError("Successful source requires sampled decode")
+        if not isinstance(row["sha256"], str) or not re.fullmatch(r"[0-9a-fA-F]{64}", row["sha256"]):
+            raise ValueError("Invalid source SHA256")
+        for key in ("width", "height", "frame_count", "size_bytes"):
+            value = row[key]
+            if pd.isna(value) or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 or int(value) != value:
+                raise ValueError(f"Invalid source metadata: {key}")
+        for key in ("fps_reported", "duration_s"):
+            value = row[key]
+            if pd.isna(value) or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"Invalid source metadata: {key}")
+    for subject, group in frame.groupby("subject_id"):
+        if group["fold_id"].nunique() > 1:
+            raise ValueError(f"Subject {subject} appears in multiple official folds")
