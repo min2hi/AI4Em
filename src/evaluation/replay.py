@@ -21,8 +21,12 @@ class ReplayRecord:
     timestamp_ms: int
     system_status: str
     calibration_status: str
+    raw_timestamp_ms: int | None
+    raw_model_id: str | None
     raw_probabilities: tuple[float, float, float] | None
     raw_class_id: int | None
+    smoothed_timestamp_ms: int | None
+    smoothed_model_id: str | None
     smoothed_probabilities: tuple[float, float, float] | None
     smoothed_class_id: int | None
 
@@ -62,8 +66,12 @@ def replay_session(packets: Iterable[FramePacket], detector: ReplayDetector) -> 
             timestamp_ms=packet.timestamp_ms,
             system_status=detection.system_status.value,
             calibration_status=detection.calibration_status,
+            raw_timestamp_ms=None if detection.raw_prediction is None else detection.raw_prediction.timestamp_ms,
+            raw_model_id=None if detection.raw_prediction is None else detection.raw_prediction.model_id,
             raw_probabilities=_probabilities(detection.raw_prediction),
             raw_class_id=raw_class,
+            smoothed_timestamp_ms=None if detection.smoothed_prediction is None else detection.smoothed_prediction.timestamp_ms,
+            smoothed_model_id=None if detection.smoothed_prediction is None else detection.smoothed_prediction.model_id,
             smoothed_probabilities=_probabilities(detection.smoothed_prediction),
             smoothed_class_id=smooth_class,
         ))
@@ -94,7 +102,8 @@ def compare_replays(
         left, right = expected[index], actual[index]
         for field in (
             "source_id", "frame_index", "timestamp_ms", "system_status", "calibration_status",
-            "raw_class_id", "smoothed_class_id",
+            "raw_timestamp_ms", "raw_model_id", "raw_class_id",
+            "smoothed_timestamp_ms", "smoothed_model_id", "smoothed_class_id",
         ):
             if getattr(left, field) != getattr(right, field):
                 mismatches.append({

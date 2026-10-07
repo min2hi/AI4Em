@@ -51,7 +51,8 @@ def test_replay_rejects_source_join_and_nonmonotonic_input():
 
 def record(timestamp, probabilities=(.2, .3, .5)):
     return ReplayRecord("video", timestamp, timestamp, "READY", "COMPLETE",
-                        probabilities, 2, None, None)
+                        timestamp, "model", probabilities, 2,
+                        None, None, None, None)
 
 
 def test_parity_accepts_declared_numeric_tolerance():
@@ -71,3 +72,13 @@ def test_parity_reports_missing_timestamp_and_probability_difference():
     assert "record_count" in fields
     assert "raw_probabilities" in fields
     assert "missing_record" in fields
+
+
+def test_parity_rejects_prediction_cadence_or_model_identity_drift():
+    expected = [record(100)]
+    actual = [replace(record(100), raw_timestamp_ms=99, raw_model_id="other")]
+    report = compare_replays(expected, actual)
+    assert not report["match"]
+    fields = [item["field"] for item in report["mismatches"]]
+    assert "raw_timestamp_ms" in fields
+    assert "raw_model_id" in fields
